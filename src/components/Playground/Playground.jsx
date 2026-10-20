@@ -1,41 +1,26 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
-  KIND, NODES, SERVICES, STATIONS, ZONES, ZONE_NODES,
-  initialState, isUp, names, newPod, nextSpare, podsOn, quorum, restorePaas, scheduleK8s, scheduleOnprem, workersUp,
+  KIND, NODES, SERVICES, ZONE_NODES,
+  initialState, isUp, newPod, nextSpare, podsOn, quorum, restorePaas, scheduleK8s, scheduleOnprem, workersUp,
 } from './model.js';
 import { TALL, WIDE } from './layouts.js';
+import { STRINGS } from './strings.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const LOG_LINES = 30;
 const INITIAL_SEQ = initialState().seq;
 const label = (p) => SERVICES[p.svc].label;
-const labels = (pods) => names(pods.map(label));
-const nodeNames = (ids) => names(ids.map((id) => NODES[id].name));
+const labelsIn = (T, pods) => T.list(pods.map(label));
 
 // Groups that heal themselves: after 5 seconds with at least `min` machines off, one comes back.
+// Their log lines live in strings.js, under `repair`.
 // Kubernetes workers come back even alone, like a managed cluster's node auto-repair.
 const REPAIR = {
-  workers: {
-    ids: ['w1', 'w2', 'w3', 'w4', 'w5'],
-    min: 1,
-    text: (n, name) => `${name} has been down for 5 seconds: node auto-repair brings it back.`,
-  },
-  control: {
-    ids: ['cp1', 'cp2', 'cp3'],
-    min: 2,
-    text: (n, name) => `${n === 3 ? 'All three' : 'Two'} control nodes have been down for 5 seconds: the engineer on call brings ${name} back.`,
-  },
-  paas: {
-    ids: ZONE_NODES.paas,
-    min: 2,
-    text: (n, name) => `${n === 3 ? 'All three' : 'Two'} servers of the container fleet have been down for 5 seconds: the engineer on call brings ${name} back.`,
-  },
-  onprem: {
-    ids: ZONE_NODES.onprem,
-    min: 2,
-    text: (n, name) => `Both GPU servers have been down for 5 seconds: someone in the server room switches ${name} back on.`,
-  },
+  workers: { ids: ['w1', 'w2', 'w3', 'w4', 'w5'], min: 1 },
+  control: { ids: ['cp1', 'cp2', 'cp3'], min: 2 },
+  paas: { ids: ZONE_NODES.paas, min: 2 },
+  onprem: { ids: ZONE_NODES.onprem, min: 2 },
 };
 
 // ---------- geometry ----------
@@ -151,7 +136,7 @@ function Packet({ L, packet, boxes, reduce }) {
   );
 }
 
-function Pod({ pod, box, reduce, selected, onSelect }) {
+function Pod({ T, pod, box, reduce, selected, onSelect }) {
   const svc = SERVICES[pod.svc];
   const kind = KIND[svc.kind];
   const solid = Boolean(svc.gpu);
@@ -171,7 +156,7 @@ function Pod({ pod, box, reduce, selected, onSelect }) {
       exit={{ opacity: 0 }}
       transition={{ duration: reduce ? 0 : 0.6, ease: [0.3, 0, 0.2, 1] }}
       className="hit cursor-pointer"
-      aria-label={`${svc.name}${pod.status === 'down' ? ', stopped' : pod.status === 'pending' ? ', waiting' : ''}`}
+      aria-label={`${T.services[pod.svc].name}${pod.status === 'down' ? T.ui.podStopped : pod.status === 'pending' ? T.ui.podWaiting : ''}`}
       {...press(() => onSelect({ type: 'pod', id: pod.id }))}
     >
       <rect
@@ -201,7 +186,7 @@ function Pod({ pod, box, reduce, selected, onSelect }) {
   );
 }
 
-function Tile({ id, t, s, selected, onSelect }) {
+function Tile({ T, id, t, s, selected, onSelect }) {
   const node = NODES[id];
   const status = s.nodes[id];
   const sel = selected?.type === 'node' && selected.id === id;
@@ -209,7 +194,7 @@ function Tile({ id, t, s, selected, onSelect }) {
   if (status === 'absent' || status === 'creating') {
     const creating = status === 'creating';
     return (
-      <g className="hit cursor-pointer" aria-label={creating ? `${node.name}, being created` : 'Free slot for a new worker'} {...press(pick)}>
+      <g className="hit cursor-pointer" aria-label={creating ? T.ui.tileCreating(T.nodes[id]) : T.ui.tileFree} {...press(pick)}>
         <rect
           x={t.x} y={t.y} width={t.w} height={t.h} rx={10}
           className={creating ? 'fill-traffic/[0.06] stroke-traffic creating' : 'fill-transparent stroke-ink/25'}
@@ -220,7 +205,7 @@ function Tile({ id, t, s, selected, onSelect }) {
           {creating ? '' : '+'}
         </text>
         <text x={t.x + t.w / 2} y={t.y + t.h / 2 + 16} textAnchor="middle" className="fill-muted text-[10px] font-semibold">
-          {creating ? 'creating' : 'free slot'}
+          {creating ? T.ui.creating : T.ui.freeSlot}
         </text>
         <rect className="focus-ring" x={t.x - 3} y={t.y - 3} width={t.w + 6} height={t.h + 6} rx={13} />
       </g>
@@ -229,19 +214,19 @@ function Tile({ id, t, s, selected, onSelect }) {
   const up = status === 'up';
   const small = node.role === 'control';
   return (
-    <g className="hit cursor-pointer" aria-label={`${node.name}, ${up ? 'running' : 'switched off'}`} {...press(pick)}>
+    <g className="hit cursor-pointer" aria-label={T.ui.tileState(T.nodes[id], up)} {...press(pick)}>
       <rect
         x={t.x} y={t.y} width={t.w} height={t.h} rx={small ? 8 : 10}
         className={up ? `fill-white ${sel ? 'stroke-traffic' : 'stroke-ink/15'}` : 'fill-alarm/[0.07] stroke-alarm'}
         strokeWidth={sel ? 2.5 : 1.25}
       />
       <text x={t.x + 9} y={small ? t.y + t.h / 2 + 4 : t.y + 18} className={`${up ? 'fill-ink' : 'fill-alarm'} text-[11px] font-bold`}>
-        {node.name}
+        {T.nodes[id]}
       </text>
       {t.w >= 76 && <circle cx={t.x + t.w - 11} cy={small ? t.y + t.h / 2 : t.y + 14} r={4} className={up ? 'fill-mesh' : 'fill-alarm'} />}
       {!up && !small && (
         <text x={t.x + t.w / 2} y={t.y + t.h / 2 + 6} textAnchor="middle" className="fill-alarm text-[15px] font-extrabold">
-          off
+          {T.ui.off}
         </text>
       )}
       <rect className="focus-ring" x={t.x - 3} y={t.y - 3} width={t.w + 6} height={t.h + 6} rx={13} />
@@ -273,26 +258,26 @@ function GpuRows({ L, t }) {
   ));
 }
 
-function MapSvg({ L, s, reduce, selected, onSelect }) {
+function MapSvg({ T, L, s, reduce, selected, onSelect }) {
   const boxes = podBoxes(L, s);
   const zoneSel = (id) => selected?.type === 'zone' && selected.id === id;
   return (
-    <svg viewBox={`0 0 ${L.width} ${L.height}`} className="block h-auto w-full select-none font-sans" role="group" aria-label="Map of the infrastructure">
+    <svg viewBox={`0 0 ${L.width} ${L.height}`} className="block h-auto w-full select-none font-sans" role="group" aria-label={T.ui.mapLabel}>
       <rect width={L.width} height={L.height} className="fill-transparent" onClick={() => onSelect(null)} aria-hidden="true" />
       {Object.entries(L.zones).map(([id, z]) => (
-        <g key={id} className="hit cursor-pointer" aria-label={ZONES[id].name} {...press(() => onSelect({ type: 'zone', id }))}>
+        <g key={id} className="hit cursor-pointer" aria-label={T.zones[id].name} {...press(() => onSelect({ type: 'zone', id }))}>
           <rect x={z.x} y={z.y} width={z.w} height={z.h} rx={18} className={ZONE_FILL[id]} strokeWidth={zoneSel(id) ? 2.5 : 1} />
           <text x={z.x + 16} y={z.y + 26} className="fill-ink text-[15px] font-extrabold">
-            {ZONES[id].name}
-            {L.subtitles && ZONES[id].note && (
-              <tspan dx={10} className="fill-muted text-[12px] font-medium">{ZONES[id].note}</tspan>
+            {T.zones[id].name}
+            {L.subtitles && T.zones[id].note && (
+              <tspan dx={10} className="fill-muted text-[12px] font-medium">{T.zones[id].note}</tspan>
             )}
           </text>
           <rect className="focus-ring" x={z.x - 3} y={z.y - 3} width={z.w + 6} height={z.h + 6} rx={21} />
         </g>
       ))}
 
-      <g className="hit cursor-pointer" aria-label={ZONES.mesh.name} {...press(() => onSelect({ type: 'zone', id: 'mesh' }))}>
+      <g className="hit cursor-pointer" aria-label={T.zones.mesh.name} {...press(() => onSelect({ type: 'zone', id: 'mesh' }))}>
         {L.mesh.map((pts, i) => (
           <g key={i}>
             <polyline points={pointsAttr(pts)} className="fill-none stroke-transparent" strokeWidth={14} />
@@ -318,10 +303,10 @@ function MapSvg({ L, s, reduce, selected, onSelect }) {
         const [lx, ly, anchor] = st.label;
         const sel = selected?.type === 'station' && selected.id === id;
         return (
-          <g key={id} className="hit cursor-pointer" aria-label={STATIONS[id].name} {...press(() => onSelect({ type: 'station', id }))}>
+          <g key={id} className="hit cursor-pointer" aria-label={T.stations[id].name} {...press(() => onSelect({ type: 'station', id }))}>
             <circle cx={x} cy={y} r={st.big ? 10 : 7} className={st.big ? 'fill-ink stroke-white' : `fill-white ${sel ? 'stroke-traffic' : 'stroke-ink'}`} strokeWidth={st.big ? 3 : 3} />
             <text x={lx} y={ly} textAnchor={anchor} className="fill-ink text-[12px] font-semibold">
-              {STATIONS[id].name}
+              {T.stations[id].name}
             </text>
             <circle className="focus-ring" cx={x} cy={y} r={14} />
           </g>
@@ -330,7 +315,7 @@ function MapSvg({ L, s, reduce, selected, onSelect }) {
 
       {Object.entries(L.tiles).map(([id, t]) => (
         <g key={id}>
-          <Tile id={id} t={t} s={s} selected={selected} onSelect={onSelect} />
+          <Tile T={T} id={id} t={t} s={s} selected={selected} onSelect={onSelect} />
           {NODES[id].zone === 'onprem' && <GpuRows L={L} t={t} />}
         </g>
       ))}
@@ -340,7 +325,7 @@ function MapSvg({ L, s, reduce, selected, onSelect }) {
           const box = boxes.get(p.id);
           if (!box) return null;
           return (
-            <Pod key={p.id} pod={p} box={box} reduce={reduce} selected={selected?.type === 'pod' && selected.id === p.id} onSelect={onSelect} />
+            <Pod key={p.id} T={T} pod={p} box={box} reduce={reduce} selected={selected?.type === 'pod' && selected.id === p.id} onSelect={onSelect} />
           );
         })}
       </AnimatePresence>
@@ -373,7 +358,7 @@ function anchorOf(L, s, sel) {
 }
 
 // The card opens next to what was clicked: below it in the top half of the map, above it in the bottom half.
-function DetailCard({ L, a, info, onClose, actions, addDisabled }) {
+function DetailCard({ T, L, a, info, onClose, actions, addDisabled }) {
   const cx = ((a.x + a.w / 2) / L.width) * 100;
   const below = a.y + a.h / 2 < L.height / 2;
   const style = {
@@ -392,72 +377,66 @@ function DetailCard({ L, a, info, onClose, actions, addDisabled }) {
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[17px] leading-tight font-extrabold">{info.title}</h3>
-        <button type="button" onClick={onClose} aria-label="Close" className="-mt-1 -mr-1 size-7 shrink-0 rounded-full text-[20px] leading-none text-muted hover:bg-paper hover:text-ink">
+        <button type="button" onClick={onClose} aria-label={T.ui.close} className="-mt-1 -mr-1 size-7 shrink-0 rounded-full text-[20px] leading-none text-muted hover:bg-paper hover:text-ink">
           ×
         </button>
       </div>
       <p className="mt-1.5 text-[14px] leading-relaxed text-ink/80">{info.body}</p>
       {info.status && <p className="mt-1.5 text-[14px] leading-relaxed font-semibold">{info.status}</p>}
-      {info.action === 'off' && <div className="mt-3"><Action dot="text-alarm" onClick={actions.off}>Switch off</Action></div>}
-      {info.action === 'on' && <div className="mt-3"><Action dot="text-mesh" onClick={actions.on}>Switch on</Action></div>}
+      {info.action === 'off' && <div className="mt-3"><Action dot="text-alarm" onClick={actions.off}>{T.ui.switchOff}</Action></div>}
+      {info.action === 'on' && <div className="mt-3"><Action dot="text-mesh" onClick={actions.on}>{T.ui.switchOn}</Action></div>}
       {info.action === 'add' && (
-        <div className="mt-3"><Action dot="text-mesh" onClick={actions.add} disabled={addDisabled}>Add a server</Action></div>
+        <div className="mt-3"><Action dot="text-mesh" onClick={actions.add} disabled={addDisabled}>{T.ui.addServer}</Action></div>
       )}
     </div>
   );
 }
 
-function MapBox({ L, s, reduce, selected, onSelect, info, actions, addDisabled }) {
+function MapBox({ T, L, s, reduce, selected, onSelect, info, actions, addDisabled }) {
   const a = selected && info ? anchorOf(L, s, selected) : null;
   return (
     <div className="relative">
-      <MapSvg L={L} s={s} reduce={reduce} selected={selected} onSelect={onSelect} />
-      {a && <DetailCard L={L} a={a} info={info} onClose={() => onSelect(null)} actions={actions} addDisabled={addDisabled} />}
+      <MapSvg T={T} L={L} s={s} reduce={reduce} selected={selected} onSelect={onSelect} />
+      {a && <DetailCard T={T} L={L} a={a} info={info} onClose={() => onSelect(null)} actions={actions} addDisabled={addDisabled} />}
     </div>
   );
 }
 
 // ---------- side panels ----------
 
-function describe(sel, s) {
+function describe(sel, s, T) {
   if (!sel) return null;
-  if (sel.type === 'station') return { title: STATIONS[sel.id].name, body: STATIONS[sel.id].about };
+  const D = T.describe;
+  if (sel.type === 'station') return { title: T.stations[sel.id].name, body: T.stations[sel.id].about };
   if (sel.type === 'zone') {
-    const z = ZONES[sel.id];
+    const z = T.zones[sel.id];
     let status = '';
     const zonePods = (zone) => s.pods.filter((p) => p.zone === zone && p.status !== 'stop');
     if (sel.id === 'paas') {
       const up = ZONE_NODES.paas.filter((id) => isUp(s, id)).length;
       const down = zonePods('paas').filter((p) => p.status === 'down').length;
-      status = `${up} of 3 servers up, ${zonePods('paas').length - down} apps running${down ? `, ${down} stopped` : ''}.`;
+      status = D.paas(up, zonePods('paas').length - down, down);
     }
     if (sel.id === 'k8s') {
       const cp = ['cp1', 'cp2', 'cp3'].filter((id) => isUp(s, id)).length;
       const waiting = zonePods('k8s').filter((p) => !p.node).length;
-      status = `${cp} of 3 control nodes and ${workersUp(s).length} workers up, ${zonePods('k8s').length - waiting} pods running${waiting ? `, ${waiting} waiting` : ''}.`;
+      status = D.k8s(cp, workersUp(s).length, zonePods('k8s').length - waiting, waiting);
     }
-    if (sel.id === 'onprem') {
-      status = `${ZONE_NODES.onprem.filter((id) => isUp(s, id)).length} of 2 servers up.`;
-    }
+    if (sel.id === 'onprem') status = D.onprem(ZONE_NODES.onprem.filter((id) => isUp(s, id)).length);
     return { title: z.name, body: z.about, status };
   }
   if (sel.type === 'node') {
     const node = NODES[sel.id];
     const state = s.nodes[sel.id];
-    const about = {
-      paas: 'A cloud server in the container fleet. Up to six apps fit on it in this model.',
-      control: 'Part of the Kubernetes control plane, which decides where every pod runs. There are three, and two must agree.',
-      worker: 'A Kubernetes worker: it runs pods. Five fit on each worker in this model.',
-      onprem: 'Two GPUs with four memory slots each in this model, plus room for three services that only need the CPU.',
-    }[node.role || node.zone];
-    if (state === 'absent') return { title: 'Free slot', body: 'Room for one more worker. Terraform can create it.', action: 'add' };
-    if (state === 'creating') return { title: node.name, body: about, status: 'Terraform is creating this server.' };
+    const about = D.nodeAbout[node.role || node.zone];
+    if (state === 'absent') return { title: D.freeTitle, body: D.freeBody, action: 'add' };
+    if (state === 'creating') return { title: T.nodes[sel.id], body: about, status: D.creating };
     const on = podsOn(s, sel.id);
-    const runs = on.length ? `Runs ${labels(on)}.` : 'Nothing runs here right now.';
+    const runs = on.length ? D.runs(labelsIn(T, on)) : D.nothing;
     return {
-      title: node.name,
+      title: T.nodes[sel.id],
       body: about,
-      status: state === 'up' ? (node.role === 'control' ? 'Running.' : `Running. ${runs}`) : 'Switched off.',
+      status: state === 'up' ? (node.role === 'control' ? D.running : `${D.running} ${runs}`) : D.switchedOff,
       action: state === 'up' ? 'off' : 'on',
       node: sel.id,
     };
@@ -465,11 +444,11 @@ function describe(sel, s) {
   if (sel.type === 'pod') {
     const p = s.pods.find((q) => q.id === sel.id);
     if (!p) return null;
-    const svc = SERVICES[p.svc];
-    let where = p.node ? `On ${NODES[p.node].name}.` : 'Waiting for a server with room.';
-    if (p.status === 'down') where = `Stopped: ${NODES[p.node].name} is off.`;
-    if (p.zone === 'k8s' && p.svc !== 'sql') where += ` Version ${p.ver}.`;
-    if (p.svc === 'sql') where += p.role === 'primary' ? ' This is the primary.' : ' This is the replica.';
+    const svc = T.services[p.svc];
+    let where = p.node ? D.podOn(T.nodes[p.node]) : D.podWaiting;
+    if (p.status === 'down') where = D.podStopped(T.nodes[p.node]);
+    if (p.zone === 'k8s' && p.svc !== 'sql') where += D.version(p.ver);
+    if (p.svc === 'sql') where += p.role === 'primary' ? D.primary : D.replica;
     return { title: svc.name, body: svc.about, status: where };
   }
   return null;
@@ -503,7 +482,12 @@ function Action({ dot, fired = 0, children, ...props }) {
 
 // ---------- the playground ----------
 
-export default function Playground() {
+export default function Playground({ lang = 'en' }) {
+  const T = STRINGS[lang] || STRINGS.en;
+  const msg = T.log;
+  const labels = (pods) => labelsIn(T, pods);
+  const nodeNames = (ids) => T.list(ids.map((id) => T.nodes[id]));
+  const nodeName = (id) => T.nodes[id];
   const sim = useRef(null);
   if (!sim.current) sim.current = initialState();
   const [, render] = useReducer((n) => n + 1, 0);
@@ -578,42 +562,42 @@ export default function Playground() {
     const k = packet('traffic', { pt: 'visitor' }, alive);
     const ms = 40 + Math.round(Math.random() * 60);
     try {
-      if (!(await k.hop({ pt: 'dns' }, 450, 'DNS sends you to the nearest edge location.'))) return;
-      if (!(await k.hop({ pt: 'fw' }, 380, 'The firewall checks the request and handles TLS.'))) return;
-      if (!(await k.hop({ pt: 'cache' }, 380, 'Cache miss: this page is built for you, so the edge asks the servers.'))) return;
-      if (!(await k.hop({ pt: 'tunnel' }, 380, 'Down an outbound tunnel. No server has an open port.'))) return;
+      if (!(await k.hop({ pt: 'dns' }, 450, msg.dns))) return;
+      if (!(await k.hop({ pt: 'fw' }, 380, msg.fw))) return;
+      if (!(await k.hop({ pt: 'cache' }, 380, msg.cache))) return;
+      if (!(await k.hop({ pt: 'tunnel' }, 380, msg.tunnel))) return;
       if (!(await k.hop({ path }, 450))) return;
       const web = pickOne(running('web', (p) => p.zone === fleet));
       if (!web) {
-        log(`No web app is running in the ${ZONES[fleet].name.toLowerCase()}: you get an error page. This is why apps run in more than one copy.`, 'alarm');
+        log(msg.noWeb(fleet), 'alarm');
       } else {
-        const where = NODES[web.node].name;
+        const where = nodeName(web.node);
         const first = fleet === 'k8s'
-          ? `The ingress sends it to a web pod on ${where}.`
-          : `The reverse proxy on ${where} hands it to the web app.`;
+          ? msg.ingress(where)
+          : msg.proxy(where);
         if (!(await k.hop({ pod: web.id }, 420, first))) return;
         if (fleet === 'k8s') {
           const api = pickOne(running('api', (p) => p.zone === 'k8s'));
-          if (api && !(await k.hop({ pod: api.id }, 360, `web calls api on ${NODES[api.node].name}.`))) return;
+          if (api && !(await k.hop({ pod: api.id }, 360, msg.webApi(nodeName(api.node))))) return;
           const db = running('sql', (p) => p.role === 'primary')[0];
           if (api && db) {
-            if (!(await k.hop({ pod: db.id }, 360, `api reads from the primary database on ${NODES[db.node].name}.`))) return;
+            if (!(await k.hop({ pod: db.id }, 360, msg.apiDb(nodeName(db.node))))) return;
             if (!(await k.hop({ pod: api.id }, 260))) return;
           } else if (api) {
-            log('The database is moving to another server: api waits a moment and retries.', 'warn');
+            log(msg.dbMoving, 'warn');
           }
         } else {
           const shards = running('docdb', (p) => p.zone === 'paas');
           const missing = sim.current.pods.filter((p) => p.svc === 'docdb' && p.status !== 'run').length;
           for (const shard of shards) {
-            if (!(await k.hop({ pod: shard.id }, 340, `The database shard on ${NODES[shard.node].name} answers its part.`))) return;
+            if (!(await k.hop({ pod: shard.id }, 340, msg.shard(nodeName(shard.node))))) return;
           }
-          if (missing) log('One database shard is down: part of the data is missing until it comes back.', 'warn');
+          if (missing) log(msg.shardDown, 'warn');
         }
         if (!(await k.hop({ pod: web.id }, 260))) return;
       }
       if (!(await k.hop({ path, reverse: true }, 380))) return;
-      if (!(await k.hop({ pt: 'visitor' }, 650, web ? `The page reaches you in ${ms} ms.` : null, 'ok'))) return;
+      if (!(await k.hop({ pt: 'visitor' }, 650, web ? msg.pageDone(ms) : null, 'ok'))) return;
     } finally {
       k.done();
     }
@@ -623,39 +607,39 @@ export default function Playground() {
     const alive = begin();
     const k = packet('gpu', { pt: 'operator' }, alive);
     try {
-      if (!(await k.hop({ pt: 'vpn' }, 450, 'The question enters the site-to-site VPN.'))) return;
+      if (!(await k.hop({ pt: 'vpn' }, 450, msg.vpn))) return;
       if (!(await k.hop({ path: 'vpnOnprem' }, 380))) return;
       const rag = pickOne(running('rag'));
       if (!rag) {
-        log('The assistant API is not running on any server: the question gets no answer.', 'alarm');
+        log(msg.noRag, 'alarm');
       } else {
-        if (!(await k.hop({ pod: rag.id }, 420, `The assistant API on ${NODES[rag.node].name} gets the question.`))) return;
+        if (!(await k.hop({ pod: rag.id }, 420, msg.rag(nodeName(rag.node))))) return;
         const embed = running('embed')[0];
         if (embed) {
-          if (!(await k.hop({ pod: embed.id }, 360, 'embed turns the question into a vector.'))) return;
-        } else log('No embedding model is running: the search falls back to keywords.', 'warn');
+          if (!(await k.hop({ pod: embed.id }, 360, msg.embed))) return;
+        } else log(msg.noEmbed, 'warn');
         const index = running('index')[0];
         if (index) {
-          if (!(await k.hop({ pod: index.id }, 360, 'The vector index returns 40 candidate passages.'))) return;
-        } else log('The vector index is moving: the assistant answers without documents.', 'warn');
+          if (!(await k.hop({ pod: index.id }, 360, msg.index))) return;
+        } else log(msg.noIndex, 'warn');
         const rerank = running('rerank')[0];
         if (rerank) {
-          if (!(await k.hop({ pod: rerank.id }, 360, 'rerank keeps the best 8.'))) return;
-        } else log('No reranker: the passages go to the model unsorted.', 'warn');
+          if (!(await k.hop({ pod: rerank.id }, 360, msg.rerank))) return;
+        } else log(msg.noRerank, 'warn');
         const xl = running('llmXL')[0];
         const small = running('llmS')[0];
         if (xl) {
-          if (!(await k.hop({ pod: xl.id }, 560, 'llm-xl writes the answer from those passages.'))) return;
+          if (!(await k.hop({ pod: xl.id }, 560, msg.xl))) return;
         } else if (small) {
-          if (!(await k.hop({ pod: small.id }, 460, 'llm-xl is not running, so llm-s answers instead: shorter, but on time.', 'warn'))) return;
+          if (!(await k.hop({ pod: small.id }, 460, msg.small, 'warn'))) return;
         } else {
-          log('No language model is running: the question waits in the queue.', 'alarm');
+          log(msg.noLlm, 'alarm');
         }
         if (!(await k.hop({ pod: rag.id }, 300))) return;
       }
       if (!(await k.hop({ path: 'vpnOnprem', reverse: true }, 360))) return;
       const secs = (1.6 + Math.random() * 1.2).toFixed(1);
-      if (!(await k.hop({ pt: 'operator' }, 380, rag ? `The answer comes back with its sources in ${secs} s.` : null, 'ok'))) return;
+      if (!(await k.hop({ pt: 'operator' }, 380, rag ? msg.answer(secs) : null, 'ok'))) return;
     } finally {
       k.done();
     }
@@ -673,16 +657,16 @@ export default function Playground() {
         nodes: { ...st.nodes, [id]: 'down' },
         pods: st.pods.map((p) => (p.node === id && p.status !== 'stop' ? { ...p, status: 'down' } : p)),
       }));
-      log(on.length ? `${node.name} is down. ${labels(on)} stop.` : `${node.name} is down. Nothing was running on it.`, 'alarm');
+      log(on.length ? msg.down(nodeName(id), labels(on)) : msg.downEmpty(nodeName(id)), 'alarm');
       if (!on.length) return;
       await wait(1400);
       if (!alive()) return;
-      log('Monitoring pages the engineer on call.', 'warn');
+      log(msg.paging, 'warn');
       await wait(1300);
       if (!alive()) return;
       const plan = restorePaas(sim.current).placed;
       if (plan.length) {
-        log(`Restoring ${labels(plan)} from the latest backup onto ${nodeNames(plan.map((p) => p.node))}.`);
+        log(msg.restoring(labels(plan), nodeNames(plan.map((p) => p.node))));
         const k = packet('data', { pt: 'backups' }, alive);
         const ok = await k.hop({ path: 'backupsPaas' }, 900);
         k.done();
@@ -692,18 +676,18 @@ export default function Playground() {
         await wait(900);
         if (!alive()) return;
         markRunning(placed);
-        log('Back online. In real life this takes about 20 minutes, and up to 30 minutes of data can be lost.', 'ok');
+        log(msg.restored, 'ok');
       }
       const left = sim.current.pods.filter((p) => p.zone === 'paas' && p.status === 'down');
-      if (left.length) log(`No room left for ${labels(left)}: they stay down until a server comes back.`, 'alarm');
+      if (left.length) log(msg.noRoom(labels(left)), 'alarm');
       return;
     }
 
     if (node.role === 'control') {
       update((st) => ({ ...st, nodes: { ...st.nodes, [id]: 'down' } }));
       const up = ['cp1', 'cp2', 'cp3'].filter((c) => isUp(sim.current, c)).length;
-      if (up >= 2) log(`${node.name} is down. ${up} of 3 control nodes still agree, so the cluster keeps working.`, 'warn');
-      else log(`${node.name} is down. With ${up} of 3 control nodes the cluster cannot decide anything: running pods keep serving, but nothing can move.`, 'alarm');
+      if (up >= 2) log(msg.cpDown(nodeName(id), up), 'warn');
+      else log(msg.cpQuorum(nodeName(id), up), 'alarm');
       return;
     }
 
@@ -719,11 +703,11 @@ export default function Playground() {
         }
         return { ...st, nodes: { ...st.nodes, [id]: 'down' }, pods };
       });
-      log(`${node.name} stops answering.`, 'alarm');
+      log(msg.workerDown(nodeName(id)), 'alarm');
       await wait(1200);
       if (!alive()) return;
-      log(on.length ? `Kubernetes marks ${node.name} as not ready and moves its ${on.length} pods.` : `${node.name} was empty: nothing to move.`, 'warn');
-      if (promoted) log('The database replica becomes the primary. The apps reconnect in a few seconds.', 'warn');
+      log(on.length ? msg.workerMoving(nodeName(id), on.length) : msg.workerEmpty(nodeName(id)), 'warn');
+      if (promoted) log(msg.promoted, 'warn');
       await wait(700);
       if (!alive()) return;
       await placeWaiting(alive);
@@ -736,7 +720,7 @@ export default function Playground() {
       nodes: { ...st.nodes, [id]: 'down' },
       pods: st.pods.map((p) => (p.node === id && p.status !== 'stop' ? { ...p, node: null, gpu: null, status: 'pending' } : p)),
     }));
-    log(`${node.name} is down. ${labels(on)} stop.`, 'alarm');
+    log(msg.down(nodeName(id), labels(on)), 'alarm');
     await wait(1200);
     if (!alive()) return;
     await placeModels(alive);
@@ -745,7 +729,7 @@ export default function Playground() {
   async function placeWaiting(alive, quietIfNone = false) {
     if (!quorum(sim.current)) {
       const waiting = sim.current.pods.filter((p) => p.zone === 'k8s' && !p.node).length;
-      if (waiting) log('Only one control node is left: nothing can move until another one comes back.', 'alarm');
+      if (waiting) log(msg.noQuorum, 'alarm');
       return [];
     }
     const { s: next, placed } = scheduleK8s(sim.current);
@@ -754,9 +738,9 @@ export default function Playground() {
     if (!alive()) return placed;
     markRunning(placed);
     const waiting = sim.current.pods.filter((p) => p.zone === 'k8s' && !p.node).length;
-    if (waiting) log(`${waiting} pods are waiting: no worker has room. Add a server to make room.`, 'warn');
-    else if (placed.length) log(`All pods are running again, on ${nodeNames([...new Set(placed.map((p) => p.node))])}. Nobody had to wake up.`, 'ok');
-    else if (!quietIfNone) log('Nothing is waiting.');
+    if (waiting) log(msg.podsWaiting(waiting), 'warn');
+    else if (placed.length) log(msg.podsBack(nodeNames([...new Set(placed.map((p) => p.node))])), 'ok');
+    else if (!quietIfNone) log(msg.nothingWaiting);
     return placed;
   }
 
@@ -764,15 +748,15 @@ export default function Playground() {
     const { s: next, placed } = scheduleOnprem(sim.current);
     commit(next);
     const xl = placed.find((p) => p.svc === 'llmXL');
-    if (xl) log(`llm-xl needs a whole GPU: GPU ${xl.gpu[0] + 1} on ${NODES[xl.node].name} is free, so it moves there.`);
+    if (xl) log(msg.xlMoves(xl.gpu[0] + 1, nodeName(xl.node)));
     const rest = placed.filter((p) => p.svc !== 'llmXL');
-    if (rest.length) log(`${labels(rest)} move to ${nodeNames([...new Set(rest.map((p) => p.node))])}.`);
+    if (rest.length) log(msg.modelsMove(labels(rest), nodeNames([...new Set(rest.map((p) => p.node))])));
     await wait(1200);
     if (!alive()) return;
     markRunning(placed);
     const waiting = sim.current.pods.filter((p) => p.zone === 'onprem' && !p.node);
-    if (waiting.length) log(`${labels(waiting)} wait: no GPU has enough free memory.`, 'warn');
-    else if (placed.length) log('The models load in about two minutes and the assistant answers again.', 'ok');
+    if (waiting.length) log(msg.modelsWait(labels(waiting)), 'warn');
+    else if (placed.length) log(msg.modelsBack, 'ok');
   }
 
   async function switchOn(id) {
@@ -786,16 +770,16 @@ export default function Playground() {
       pods: st.pods.map((p) => (p.node === id && p.status === 'down' ? { ...p, status: 'run' } : p)),
     }));
     if (node.zone === 'paas') {
-      log(back.length ? `${node.name} is back, and ${labels(back)} start again.` : `${node.name} is back, empty: the apps stay where they were restored.`, 'ok');
+      log(back.length ? msg.paasBack(nodeName(id), labels(back)) : msg.paasBackEmpty(nodeName(id)), 'ok');
       return;
     }
     if (node.zone === 'onprem') {
-      log(`${node.name} is back.`, 'ok');
+      log(msg.gpuBack(nodeName(id)), 'ok');
       await wait(500);
       if (alive()) await placeModels(alive);
       return;
     }
-    log(node.role === 'control' ? `${node.name} is back in the control plane.` : `${node.name} is back. New pods can land on it.`, 'ok');
+    log(node.role === 'control' ? msg.cpBack(nodeName(id)) : msg.workerBack(nodeName(id)), 'ok');
     await wait(500);
     if (alive()) await placeWaiting(alive, true);
   }
@@ -804,23 +788,23 @@ export default function Playground() {
     if (sim.current.busy.release) return;
     const alive = begin();
     if (!quorum(sim.current)) {
-      log('The control plane has lost quorum: the release has to wait.', 'alarm');
+      log(msg.releaseWait, 'alarm');
       return;
     }
     setBusy('release', true);
     try {
       const ver = sim.current.release + 1;
-      log('Merged to main. The tests pass.');
+      log(msg.merged);
       await wait(800);
       if (!alive()) return;
-      log(`The new image is built and stored in the registry as v${ver}.`);
+      log(msg.image(ver));
       const k = packet('ink', { pt: 'registry' }, alive);
       const ok = await k.hop({ path: 'registryK8s' }, 900);
       k.done();
       if (!ok) return;
       update((st) => ({ ...st, release: ver }));
       for (const svc of ['web', 'api', 'jobs']) {
-        log(`Rolling update of ${svc}: one pod at a time, while the others keep serving.`);
+        log(msg.rolling(svc));
         const olds = running(svc, (p) => p.zone === 'k8s' && p.ver < ver).map((p) => p.id);
         for (const oldId of olds) {
           if (!alive()) return;
@@ -852,7 +836,7 @@ export default function Playground() {
           setPods((pods) => pods.filter((p) => p.id !== old.id));
         }
       }
-      log(`Release v${ver} is live. No visitor saw an error.`, 'ok');
+      log(msg.live(ver), 'ok');
     } finally {
       if (alive()) setBusy('release', false);
     }
@@ -864,17 +848,17 @@ export default function Playground() {
     const alive = begin();
     setBusy('add', true);
     try {
-      log('terraform plan: 1 to add, 0 to change, 0 to destroy.');
+      log(msg.plan);
       await wait(700);
       if (!alive()) return;
       update((st) => ({ ...st, nodes: { ...st.nodes, [id]: 'creating' } }));
-      log(`terraform apply: creating ${NODES[id].name}.`);
+      log(msg.apply(nodeName(id)));
       await wait(1800);
       if (!alive()) return;
       update((st) => ({ ...st, nodes: { ...st.nodes, [id]: 'up' } }));
-      log(`${NODES[id].name} joins the cluster.`, 'ok');
+      log(msg.joins(nodeName(id)), 'ok');
       const placed = await placeWaiting(alive, true);
-      if (alive() && !placed.length) log('New pods will land here too, starting with the next release.');
+      if (alive() && !placed.length) log(msg.landHere);
     } finally {
       if (alive()) setBusy('add', false);
     }
@@ -891,7 +875,7 @@ export default function Playground() {
     repairs.current = {};
     commit(initialState());
     setSelected(null);
-    log('Everything is back to how it started.');
+    log(msg.reset);
   }
 
   // ---------- self-repair ----------
@@ -908,7 +892,7 @@ export default function Playground() {
         const still = group.ids.filter((id) => sim.current.nodes[id] === 'down');
         if (still.length < group.min) return;
         const id = pickOne(still);
-        log(group.text(still.length, NODES[id].name), 'warn');
+        log(T.repair[key](still.length, nodeName(id)), 'warn');
         switchOn(id);
       }, 5000);
     }
@@ -1017,7 +1001,7 @@ export default function Playground() {
     setAutoplay((on) => !on);
   };
 
-  const info = describe(selected, s);
+  const info = describe(selected, s, T);
   const spare = nextSpare(s);
   const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
   const cardActions = {
@@ -1050,9 +1034,9 @@ export default function Playground() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  const box = (L) => (
+  const box = (layout) => (
     <MapBox
-      L={L} s={s} reduce={reduce} selected={selected} onSelect={setSelected}
+      T={T} L={layout} s={s} reduce={reduce} selected={selected} onSelect={setSelected}
       info={info} actions={cardActions} addDisabled={s.busy.add}
     />
   );
@@ -1062,13 +1046,13 @@ export default function Playground() {
       <div className="flex flex-wrap gap-2 [grid-area:actions] lg:flex-col lg:items-stretch">
         <div className="glass flex items-center justify-between gap-3 py-1.5 pr-1.5 pl-2">
           <button type="button" onClick={reset} className="rounded-full px-2 py-1.5 text-left text-[14px] font-semibold text-ink/75 underline decoration-ink/20 underline-offset-4 hover:text-ink">
-            Reset the map
+            {T.ui.reset}
           </button>
           <button
             type="button"
             onClick={toggleAutoplay}
-            aria-label={autoplay ? 'Pause autoplay' : 'Start autoplay'}
-            title={autoplay ? 'Pause autoplay' : 'Start autoplay'}
+            aria-label={autoplay ? T.ui.pause : T.ui.play}
+            title={autoplay ? T.ui.pause : T.ui.play}
             className="flex size-9 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-white text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
           >
             {autoplay ? (
@@ -1083,12 +1067,12 @@ export default function Playground() {
             )}
           </button>
         </div>
-        <Action dot="text-traffic" fired={fired.page} onClick={run.page}>Open a web page</Action>
-        <Action dot="text-gpu" fired={fired.ask} onClick={run.ask}>Ask the AI assistant</Action>
-        <Action dot="text-alarm" fired={fired.off} onClick={run.off}>Switch off a random server</Action>
-        <Action dot="text-ink" fired={fired.release} onClick={run.release} disabled={s.busy.release}>Ship a release</Action>
-        <Action dot="text-mesh" fired={fired.add} onClick={run.add} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
-          Add a server
+        <Action dot="text-traffic" fired={fired.page} onClick={run.page}>{T.ui.buttons.page}</Action>
+        <Action dot="text-gpu" fired={fired.ask} onClick={run.ask}>{T.ui.buttons.ask}</Action>
+        <Action dot="text-alarm" fired={fired.off} onClick={run.off}>{T.ui.buttons.off}</Action>
+        <Action dot="text-ink" fired={fired.release} onClick={run.release} disabled={s.busy.release}>{T.ui.buttons.release}</Action>
+        <Action dot="text-mesh" fired={fired.add} onClick={run.add} disabled={!spare || s.busy.add} title={spare ? undefined : T.ui.maxWorkers}>
+          {T.ui.buttons.add}
         </Action>
       </div>
 
@@ -1099,10 +1083,10 @@ export default function Playground() {
         </div>
       </div>
 
-      <section aria-label="What is happening" className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log] lg:min-h-[8rem]">
+      <section aria-label={T.ui.logLabel} className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log] lg:min-h-[8rem]">
         <div ref={logRef} className="absolute inset-0 overflow-y-auto p-5">
           <ol aria-live={autoplay ? 'off' : 'polite'} className="space-y-2 text-[14px] leading-snug">
-            {s.log.length === 0 && <li className="text-white/60">Waiting for something to happen.</li>}
+            {s.log.length === 0 && <li className="text-white/60">{T.ui.waiting}</li>}
             {s.log.map((l) => (
               <li key={l.id} className="flex gap-3">
                 <span className="shrink-0 pt-px text-[12px] tabular-nums text-white/45">{fmt(l.t)}</span>
@@ -1115,10 +1099,10 @@ export default function Playground() {
       </section>
 
       <p className="glass glass-blue px-4 py-3 text-[14px] leading-snug text-ink/80 [grid-area:hint]">
-        Click any part of the map to see what it does. Click a server to switch it off and on.
+        {T.ui.hint}
       </p>
 
-      <p className="[grid-area:note]"><span className="glass inline-block px-3.5 py-1.5 text-[13px] text-muted">A model, not a blueprint: names, sizes and timings are simplified.</span></p>
+      <p className="[grid-area:note]"><span className="glass inline-block px-3.5 py-1.5 text-[13px] text-muted">{T.ui.note}</span></p>
     </div>
   );
 }
