@@ -83,7 +83,7 @@ const en = {
       role: 'BSc in Computer Science and Engineering',
       org: 'University of Bergamo',
       text: 'Thesis with Prof. Paolo Malighetti: a web scraper in JavaScript, Node.js and Docker that collects e-bike components from Italian shops.',
-      link: { href: 'https://github.com/DaniGreco/BSc_Thesis', label: 'GitHub project' },
+      link: { href: 'https://github.com/DaniGreco/ebike-market-analysis', label: 'GitHub project' },
     },
   ],
   contact: {
@@ -170,7 +170,7 @@ const it = {
       role: 'Laurea triennale in Ingegneria Informatica',
       org: 'Università di Bergamo',
       text: 'Tesi con il Prof. Paolo Malighetti: un web scraper in JavaScript, Node.js e Docker che raccoglie componenti per e-bike dai negozi italiani.',
-      link: { href: 'https://github.com/DaniGreco/BSc_Thesis', label: 'Progetto su GitHub' },
+      link: { href: 'https://github.com/DaniGreco/ebike-market-analysis', label: 'Progetto su GitHub' },
     },
   ],
   contact: {
