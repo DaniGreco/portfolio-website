@@ -165,9 +165,27 @@ li.now .when {
 .playground {
   display: grid;
   gap: 1rem 1.25rem;
-  grid-template-areas: "actions" "map" "log" "hint" "note";
+  grid-template-areas: "actions" "map" "hint" "note";
+}
+/* Below 1024px the map and the log share one block, so the log can stay pinned (sticky) over the map. */
+.map-log {
+  grid-area: map;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+/* A phone held sideways is too short to give up part of the screen: there the log stays in place. */
+@media (max-height: 499px) {
+  .map-log > section {
+    position: relative;
+    bottom: auto;
+  }
 }
 @media (min-width: 1024px) {
+  .map-log {
+    display: contents;
+  }
   .playground {
     --map-w: calc((100dvh - var(--header) - 7rem) * 1.5385);
     grid-template-columns: minmax(0, var(--map-w)) 20rem;

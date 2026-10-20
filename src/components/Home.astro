@@ -65,16 +65,16 @@ const nav = [
 
   <main>
     <section id="top" class="snap hero relative flex flex-col">
-      <div class="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-10 pb-8 sm:pt-16 md:px-6">
-        <div class="grid gap-8 lg:grid-cols-12 lg:items-end">
+      <div class="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-6 pb-5 sm:pt-16 sm:pb-8 md:px-6">
+        <div class="grid gap-6 sm:gap-8 lg:grid-cols-12 lg:items-end">
           <Reveal
             as="h1"
             text={t.hero.title}
-            class="hero-in wide-type text-[clamp(2rem,3.7vw,3.5rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8"
+            class="hero-in wide-type text-[clamp(1.85rem,3.7vw,3.5rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8"
           />
-          <div class="hero-in fade-up glass p-6 lg:col-span-4" style="--delay: 450ms">
-            <p class="max-w-[44ch] text-[18px] leading-relaxed text-ink/80">{t.hero.intro}</p>
-            <ul class="mt-6 flex flex-wrap gap-2.5 text-[15px] font-semibold">
+          <div class="hero-in fade-up glass p-5 sm:p-6 lg:col-span-4" style="--delay: 450ms">
+            <p class="max-w-[44ch] text-[16.5px] leading-relaxed text-ink/80 sm:text-[18px]">{t.hero.intro}</p>
+            <ul class="mt-5 flex flex-wrap gap-2.5 text-[15px] font-semibold sm:mt-6">
               <li>
                 <a href="https://danielegreco.com/github" class="inline-flex rounded-full border border-ink/15 bg-white px-4 py-2 transition-colors hover:border-ink/45">GitHub</a>
               </li>
@@ -85,11 +85,11 @@ const nav = [
           </div>
         </div>
       </div>
-      <div class="relative flex justify-center px-4 pb-5 sm:pb-8 md:pb-10">
-        <a href="#demo" class="demo-cue glass hero-in fade-up group flex flex-col items-center gap-3 px-7 pt-4 pb-5 text-[17px] font-semibold text-ink" style="--delay: 900ms">
+      <div class="relative flex justify-center px-4 pb-4 sm:pb-8 md:pb-10">
+        <a href="#demo" class="demo-cue glass hero-in fade-up group flex items-center gap-3 py-2 pr-2 pl-5 text-[16px] font-semibold text-ink sm:flex-col sm:px-7 sm:pt-4 sm:pb-5 sm:text-[17px]" style="--delay: 900ms">
           {t.hero.cue}
-          <span class="flex size-14 items-center justify-center rounded-full border border-ink/15 bg-white shadow-[0_10px_24px_-14px_rgba(20,24,46,0.5)] transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-white">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <span class="flex size-10 items-center justify-center rounded-full sm:size-14 border border-ink/15 bg-white shadow-[0_10px_24px_-14px_rgba(20,24,46,0.5)] transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-white">
+            <svg viewBox="0 0 24 24" width="26" height="26" class="size-5 sm:size-[26px]" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"></path>
             </svg>
           </span>
@@ -241,6 +241,19 @@ const nav = [
     const el = document.getElementById(id);
     if (el) observer.observe(el);
   }
+
+  // The address follows the screen you scroll to, so a reload lands where you were. It waits for
+  // scrolling to settle, so it never overrides the address the page was opened with.
+  let settle = 0;
+  const followHash = () => {
+    const hash = here === 'top' ? '' : `#${here}`;
+    if (location.hash === hash || (here === 'experience' && location.hash === '#studies')) return;
+    history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
+  };
+  window.addEventListener('scroll', () => {
+    clearTimeout(settle);
+    settle = setTimeout(followHash, 150);
+  }, { passive: true });
 
   // Where Experience and Studies sit side by side, Studies lands exactly where Experience does.
   const sideBySide = matchMedia('(min-width: 1024px)');
