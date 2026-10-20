@@ -1,7 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "danielegreco-com",
+  // Personal Cloudflare account (the login also sees the flAi one): deploys always go here.
+  "account_id": "e1d53a349b09763dd7389e29e03d917e",
   "compatibility_date": "2026-10-01",
+  // www.danielegreco.com already redirects to the apex with a zone rule.
+  "routes": [{ "pattern": "danielegreco.com", "custom_domain": true }],
+  // Keep the *.workers.dev address too: adding routes turns it off unless it is set explicitly.
+  "workers_dev": true,
   // Static site: Cloudflare serves the files in dist/ from the edge, no server code.
   "assets": {
     "directory": "./dist",
