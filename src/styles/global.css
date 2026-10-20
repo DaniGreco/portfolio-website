@@ -156,9 +156,24 @@
   }
 }
 
+/* The arrow under "Play with the demo" hops a few times once the hero has arrived, then rests. */
+.demo-cue svg {
+  animation: cue-hop 1.4s ease-in-out 2s 3;
+}
+@keyframes cue-hop {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: translateY(4px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .js .reveal .w > span,
-  .js .fade-up {
+  .js .fade-up,
+  .demo-cue svg {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;
