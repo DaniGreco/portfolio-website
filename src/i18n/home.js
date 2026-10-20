@@ -24,8 +24,9 @@ const en = {
   nav: { demo: 'Demo', experience: 'Experience', studies: 'Studies', contact: 'Contact' },
   hero: {
     title: 'Powering mission-critical infrastructure for aviation and modern industry',
+    // Rendered as HTML: <strong> marks the words that stand out.
     intro:
-      'PhD student with several years of experience as a system architect and software engineer, based in Bergamo, Italy. I build and manage all kinds of clusters, from on-premise server rooms to cloud-native environments, following the highest security standards.',
+      '<strong>PhD</strong> student with several years of experience as a system architect and software engineer, based in Bergamo, Italy. I build and manage all kinds of clusters, <strong>from on-premise server rooms to cloud-native environments</strong>, following the <strong>highest security</strong> standards.',
     cue: 'Play with the demo',
   },
   demo: 'Infrastructure demo',
@@ -112,7 +113,7 @@ const it = {
   hero: {
     title: "Infrastrutture mission-critical per l'aviazione e l'industria moderna",
     intro:
-      'Dottorando con diversi anni di esperienza come system architect e software engineer, con base a Bergamo. Costruisco e gestisco cluster di ogni tipo, dalle sale server on-premise agli ambienti cloud-native, seguendo i più alti standard di sicurezza.',
+      '<strong>Dottorando</strong> con diversi anni di esperienza come system architect e software engineer, con base a Bergamo. Costruisco e gestisco cluster di ogni tipo, <strong>dalle sale server on-premise agli ambienti cloud-native</strong>, seguendo i <strong>più alti standard di sicurezza</strong>.',
     cue: 'Prova la demo',
   },
   demo: "Demo dell'infrastruttura",

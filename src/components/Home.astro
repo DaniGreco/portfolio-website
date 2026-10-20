@@ -75,7 +75,7 @@ const nav = [
             class="hero-in wide-type text-[clamp(1.85rem,3.7vw,3.5rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8"
           />
           <div class="hero-in fade-up glass p-5 sm:p-6 lg:col-span-4" style="--delay: 450ms">
-            <p class="max-w-[44ch] text-[16.5px] leading-relaxed text-ink/80 sm:text-[18px]">{t.hero.intro}</p>
+            <p class="max-w-[44ch] text-[16.5px] leading-relaxed text-ink/80 sm:text-[18px] [&_strong]:font-bold [&_strong]:text-ink" set:html={t.hero.intro} />
             <ul class="mt-5 flex flex-wrap gap-2.5 text-[15px] font-semibold sm:mt-6">
               <li>
                 <a href="https://danielegreco.com/github" class="inline-flex rounded-full border border-ink/15 bg-white px-4 py-2 transition-colors hover:border-ink/45">GitHub</a>
