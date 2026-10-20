@@ -54,6 +54,44 @@
   min-height: calc(100dvh - var(--header));
 }
 
+/* Top bar: the current screen is underlined, one line even when two links share it. */
+.nav-group[data-current] a {
+  color: var(--color-ink);
+}
+.nav-group[data-current]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-ink);
+}
+
+/* Frosted panel: text stays readable over the animated background, which shows through blurred. */
+.glass {
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 22px;
+  background: rgb(244 246 248 / 0.55);
+  box-shadow: 0 18px 40px -28px rgb(20 24 46 / 0.45);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* A tinted glass panel, for short hints that should stand out from the plain ones. */
+.glass.glass-blue {
+  border-color: rgb(35 87 214 / 0.2);
+  background: rgb(35 87 214 / 0.13);
+}
+
+/* The hero slides up under the see-through top bar, so its background fills the whole screen. */
+.snap.hero {
+  margin-top: calc(-1 * var(--header));
+  padding-top: var(--header);
+  min-height: 100dvh;
+}
+
 .wide-type {
   font-stretch: 112%;
 }
@@ -67,7 +105,7 @@
 }
 @media (min-width: 1024px) {
   .playground {
-    --map-w: calc((100dvh - var(--header) - 6.5rem) * 1.5385);
+    --map-w: calc((100dvh - var(--header) - 7rem) * 1.5385);
     grid-template-columns: minmax(0, var(--map-w)) 20rem;
     grid-template-rows: auto 1fr auto auto;
     grid-template-areas: "map actions" "map log" "map hint" "note .";

@@ -24,6 +24,8 @@ npm run preview   # serve dist/ locally
   - `model.js`: zones, servers, services, and how they get scheduled when something breaks.
   - `layouts.js`: coordinates of the wide map (desktop) and the tall one (phone).
   - `Playground.jsx`: drawing, animations and the scenarios.
+- `src/scripts/backgrounds/flow.js`: the page background, strands following a noise flow field;
+  the pointer pulls them into a vortex. `loop.js` holds the shared canvas loop, `noise.js` the noise.
 - `public/_redirects`: short links (`/github`, `/linkedin`).
 - `public/robots.txt`: asks AI training crawlers to stay out.
 

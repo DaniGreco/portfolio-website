@@ -920,7 +920,7 @@ export default function Playground() {
         </div>
       </div>
 
-      <section aria-label="What is happening" className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log]">
+      <section aria-label="What is happening" className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log] lg:min-h-[8rem]">
         <div ref={logRef} className="absolute inset-0 overflow-y-auto p-5">
           <ol aria-live="polite" className="space-y-2 text-[14px] leading-snug">
             {s.log.length === 0 && <li className="text-white/60">Waiting for something to happen.</li>}
@@ -935,11 +935,11 @@ export default function Playground() {
         </div>
       </section>
 
-      <p className="text-[14px] leading-snug text-muted [grid-area:hint]">
+      <p className="glass glass-blue px-4 py-3 text-[14px] leading-snug text-ink/80 [grid-area:hint]">
         Click any part of the map to see what it does. Click a server to switch it off and on.
       </p>
 
-      <p className="text-[13px] text-muted [grid-area:note]">A model, not a blueprint: names, sizes and timings are simplified.</p>
+      <p className="[grid-area:note]"><span className="glass inline-block px-3.5 py-1.5 text-[13px] text-muted">A model, not a blueprint: names, sizes and timings are simplified.</span></p>
     </div>
   );
 }

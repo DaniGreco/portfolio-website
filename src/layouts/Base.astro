@@ -30,7 +30,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:image" content={new URL('/og.png', Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
-  <body class="min-h-dvh bg-paper text-ink">
+  <body class="min-h-dvh text-ink">
     <slot />
   </body>
 </html>
