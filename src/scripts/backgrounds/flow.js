@@ -1,13 +1,15 @@
 // Thin strands following an invisible current: particles move along a noise flow field.
-// Each particle remembers its last positions and draws them as a tail that fades to nothing,
-// and the canvas is cleared every frame, so trails always disappear instead of piling up.
+// Each particle remembers a point every few pixels it travels (not every frame), so a long
+// tail costs few segments, and the tail fades to nothing. The canvas is cleared every frame,
+// so trails always disappear instead of piling up.
 // The pointer pulls the current towards it and turns it into a vortex.
 import { makeNoise } from './noise.js';
 import { runCanvas } from './loop.js';
 
 const noise = makeNoise(3);
-const TAIL = 28; // positions kept per particle
-const BANDS = 4; // the tail is drawn in bands, fainter towards its end
+const TAIL = 40; // points remembered per particle
+const STEP = 4; // px travelled between two remembered points
+const BANDS = 5; // the tail is drawn in bands, fainter towards its end
 const BAND = TAIL / BANDS;
 const RGB = ['35, 87, 214', '74, 120, 228', '31, 63, 153'];
 const GRAVITY = 320; // how far, in px, the pointer bends the current
@@ -15,22 +17,27 @@ const SPEED = 1.5;
 
 export function start(canvas) {
   let count = 0;
-  let xs = new Float32Array(0); // ring buffers: count * TAIL
+  let px = new Float32Array(0); // current position
+  let py = new Float32Array(0);
+  let xs = new Float32Array(0); // remembered points, ring buffers of TAIL per particle
   let ys = new Float32Array(0);
-  let head = new Uint16Array(0); // newest point of each particle
-  let filled = new Uint16Array(0); // valid points of each particle
+  let head = new Uint16Array(0); // newest remembered point
+  let filled = new Uint16Array(0); // how many remembered points are valid
   let age = new Float32Array(0);
   let life = new Float32Array(0);
-  let pull = new Float32Array(0); // how strongly the pointer is bending each particle, smoothed
+  let pull = new Float32Array(0); // how strongly the pointer bends each particle, smoothed
 
   function spawn(i, W, H) {
-    const o = i * TAIL;
-    xs[o] = Math.random() * W;
-    ys[o] = Math.random() * H;
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    px[i] = x;
+    py[i] = y;
+    xs[i * TAIL] = x;
+    ys[i * TAIL] = y;
     head[i] = 0;
     filled[i] = 1;
     age[i] = 0;
-    life[i] = 90 + Math.random() * 180;
+    life[i] = 200 + Math.random() * 300;
     pull[i] = 0;
   }
 
@@ -38,9 +45,8 @@ export function start(canvas) {
     const f = 1 / 420;
     const near = pointer && pointer.active > 0.001;
     for (let i = 0; i < count; i++) {
-      const o = i * TAIL;
-      const x = xs[o + head[i]];
-      const y = ys[o + head[i]];
+      const x = px[i];
+      const y = py[i];
       const angle = noise(x * f, y * f, t * 0.04) * Math.PI * 2;
       let vx = Math.cos(angle) * SPEED;
       let vy = Math.sin(angle) * SPEED;
@@ -48,7 +54,7 @@ export function start(canvas) {
       if (near) {
         const dx = x - pointer.x;
         const dy = y - pointer.y;
-        const d = Math.hypot(dx, dy) || 1;
+        const d = Math.sqrt(dx * dx + dy * dy) || 1;
         if (d < GRAVITY) {
           k = (1 - d / GRAVITY) ** 1.6 * pointer.active;
           // Around the pointer: swirl (perpendicular) plus a pull towards it.
@@ -64,10 +70,17 @@ export function start(canvas) {
         spawn(i, W, H);
         continue;
       }
-      head[i] = (head[i] + 1) % TAIL;
-      xs[o + head[i]] = nx;
-      ys[o + head[i]] = ny;
-      if (filled[i] < TAIL) filled[i] += 1;
+      px[i] = nx;
+      py[i] = ny;
+      const o = i * TAIL;
+      const lx = nx - xs[o + head[i]];
+      const ly = ny - ys[o + head[i]];
+      if (lx * lx + ly * ly >= STEP * STEP) {
+        head[i] = (head[i] + 1) % TAIL;
+        xs[o + head[i]] = nx;
+        ys[o + head[i]] = ny;
+        if (filled[i] < TAIL) filled[i] += 1;
+      }
     }
   }
 
@@ -77,16 +90,18 @@ export function start(canvas) {
     const paths = Array.from({ length: RGB.length * BANDS * 2 }, () => new Path2D());
     for (let i = 0; i < count; i++) {
       const n = filled[i];
-      if (n < 2) continue;
       const o = i * TAIL;
       const strong = pull[i] > 0.2 ? 1 : 0;
-      const base = ((i % RGB.length) * BANDS) * 2;
+      const base = (i % RGB.length) * BANDS * 2;
+      // From the current position back through the remembered points, newest first.
+      let path = paths[base + strong];
+      path.moveTo(px[i], py[i]);
       let idx = head[i];
-      let band = -1;
-      let path = null;
-      for (let j = 0; j < n - 1; j++) {
-        const b = Math.floor(j / BAND);
+      path.lineTo(xs[o + idx], ys[o + idx]);
+      let band = 0;
+      for (let j = 1; j < n; j++) {
         const prev = (idx - 1 + TAIL) % TAIL;
+        const b = Math.floor(j / BAND);
         if (b !== band) {
           band = b;
           path = paths[base + band * 2 + strong];
@@ -116,6 +131,8 @@ export function start(canvas) {
     maxDpr: 1,
     setup(ctx, W, H) {
       count = Math.round((W * H) / 1600);
+      px = new Float32Array(count);
+      py = new Float32Array(count);
       xs = new Float32Array(count * TAIL);
       ys = new Float32Array(count * TAIL);
       head = new Uint16Array(count);
@@ -123,18 +140,13 @@ export function start(canvas) {
       age = new Float32Array(count);
       life = new Float32Array(count);
       pull = new Float32Array(count);
-      for (let i = 0; i < count; i++) {
-        spawn(i, W, H);
-        age[i] = Math.random() * life[i];
-      }
+      for (let i = 0; i < count; i++) spawn(i, W, H);
+      // Start with tails already grown, so the first frames are not a field of dots.
+      for (let n = 0; n < TAIL * 3; n++) advance(0, W, H, null);
     },
     frame(ctx, t, W, H, dpr, still, pointer) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (still) {
-        for (let n = 0; n < TAIL; n++) advance(20, W, H, null);
-      } else {
-        advance(t, W, H, pointer);
-      }
+      advance(still ? 20 : t, W, H, still ? null : pointer);
       draw(ctx, W, H);
     },
   });

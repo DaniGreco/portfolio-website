@@ -79,6 +79,29 @@
   backdrop-filter: blur(16px);
 }
 
+/* Experience and studies: what I do now stands out with a blue tint and a bar on the left.
+   The tint bleeds sideways into the panel padding, so the rows keep their height. */
+li.now {
+  position: relative;
+  margin-inline: -0.75rem;
+  padding-inline: 0.75rem;
+  border-radius: 14px;
+  background: rgb(35 87 214 / 0.08);
+}
+li.now::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--color-traffic);
+}
+li.now .when {
+  color: var(--color-traffic);
+}
+
 /* A tinted glass panel, for short hints that should stand out from the plain ones. */
 .glass.glass-blue {
   border-color: rgb(35 87 214 / 0.2);
