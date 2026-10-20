@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logo DG: proposte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4f6f8; --ink: #14182e; --muted: #545a70; --traffic: #2357d6; --mesh: #0e9f7e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: Archivo, system-ui, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 40px; font-stretch: 112%; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .lead { color: var(--muted); font-size: 17px; max-width: 70ch; margin: 0 0 32px; line-height: 1.55; }
+  .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); }
+  .card { background: #fff; border: 1px solid rgb(20 24 46 / 0.1); border-radius: 22px; padding: 22px; }
+  .card h2 { margin: 0; font-size: 22px; font-weight: 800; }
+  .card p { margin: 6px 0 18px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; }
+  .big { width: 132px; height: 132px; }
+  .sizes { display: flex; align-items: end; gap: 14px; }
+  .sizes figure { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
+  .sizes svg { display: block; margin: 0 auto 6px; }
+  .tabs { display: grid; gap: 8px; margin-top: 18px; }
+  .tab { display: flex; align-items: center; gap: 8px; width: 250px; padding: 7px 12px; border-radius: 10px 10px 0 0; font: 13px system-ui, sans-serif; }
+  .tab.light { background: #e9ecf1; color: #1f2330; }
+  .tab.dark { background: #2b2d33; color: #e8e8ea; }
+  .tab svg { width: 16px; height: 16px; flex: none; }
+  .bar { margin-top: 18px; display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 14px; background: rgb(244 246 248 / 0.7); border: 1px solid rgb(20 24 46 / 0.08); }
+  .bar svg { width: 30px; height: 30px; flex: none; }
+  .bar b { font-stretch: 112%; font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
+  .bar span { color: rgb(20 24 46 / 0.6); font-size: 15px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Logo DG: quattro proposte</h1>
+  <p class="lead">
+    Ogni proposta è disegnata su una griglia di 64×64 e usa i colori del sito.
+    Sotto: il logo grande, a 32 e 16 pixel come favicon, nella scheda del browser chiara e scura, e nella barra in alto accanto al nome.
+  </p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+  const INK = '#14182e', BLUE = '#2357d6', GREEN = '#0e9f7e';
+  // The favicon needs a backdrop on dark tab bars: marks without their own tile get a white one.
+  const tile = '<rect x="1" y="1" width="62" height="62" rx="14" fill="#fff" stroke="#14182e" stroke-opacity=".12" stroke-width="2"/>';
+  const MARKS = [
+    {
+      name: '1. Linee',
+      about: 'D e G sono due linee della mappa della demo, una blu e una verde, con due stazioni. Richiama subito il percorso delle richieste nel sito.',
+      svg: `
+        <path d="M9 15H19A11 11 0 0 1 30 26V38A11 11 0 0 1 19 49H9Z" fill="none" stroke="${BLUE}" stroke-width="6.5" stroke-linejoin="round"/>
+        <path d="M56 22A7 7 0 0 0 49 15H46A8 8 0 0 0 38 23V41A8 8 0 0 0 46 49H49A7 7 0 0 0 56 42V33H48" fill="none" stroke="${GREEN}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="32" r="4.4" fill="#fff" stroke="${INK}" stroke-width="2.6"/>
+        <circle cx="48" cy="33" r="4.4" fill="#fff" stroke="${INK}" stroke-width="2.6"/>`,
+      tiled: false,
+    },
+    {
+      name: '2. Rack',
+      about: 'D e G divise in fette orizzontali, come le unità di un rack di server visto di fronte, con una spia verde per unità. Ha già il suo sfondo scuro, quindi funziona uguale come favicon e accanto al nome.',
+      svg: `
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="${INK}"/>
+        <path d="M11 16H17A10 10 0 0 1 27 26V38A10 10 0 0 1 17 48H11Z" fill="none" stroke="#eef1f8" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M54 23A7 7 0 0 0 47 16H45A8 8 0 0 0 37 24V40A8 8 0 0 0 45 48H47A7 7 0 0 0 54 41V34H47" fill="none" stroke="#eef1f8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="${INK}">
+          <rect x="4" y="19.1" width="56" height="1.8"/><rect x="4" y="27.1" width="56" height="1.8"/>
+          <rect x="4" y="35.1" width="56" height="1.8"/><rect x="4" y="43.1" width="56" height="1.8"/>
+        </g>
+        <g fill="${GREEN}">
+          <circle cx="11" cy="15.5" r="1.4"/><circle cx="11" cy="23.5" r="1.4"/><circle cx="11" cy="31.5" r="1.4"/>
+          <circle cx="11" cy="39.5" r="1.4"/><circle cx="11" cy="47.5" r="1.4"/>
+        </g>
+        <circle cx="50.5" cy="32" r="1.6" fill="#5b8cff"/>`,
+      tiled: true,
+    },
+    {
+      name: '3. Circuito',
+      about: 'D e G come piste di una scheda madre, con gli angoli a 45 gradi e due fori di collegamento. Un solo colore: è la più sobria.',
+      svg: `
+        <path d="M9 14H21L30 23V41L21 50H9Z" fill="none" stroke="${BLUE}" stroke-width="5.5" stroke-linejoin="round"/>
+        <path d="M56 21L49 14H44L37 21V43L44 50H49L56 43V33H47" fill="none" stroke="${BLUE}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="32" r="4.3" fill="#fff" stroke="${BLUE}" stroke-width="3"/>
+        <circle cx="47" cy="33" r="4.3" fill="#fff" stroke="${BLUE}" stroke-width="3"/>`,
+      tiled: false,
+    },
+    {
+      name: '4. Nodo e filo',
+      about: 'La D è un nodo pieno di un workflow, con la sua porta di uscita. La G è il filo che parte da lì e finisce in un punto. Forma piena: è la più leggibile a 16 pixel.',
+      svg: `
+        <path d="M7 14H18A13 13 0 0 1 31 27V37A13 13 0 0 1 18 50H7Z" fill="${INK}"/>
+        <path d="M53.7 22.8A12 12 0 1 0 58 32H49" fill="none" stroke="${BLUE}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="31" cy="32" r="3.8" fill="#fff" stroke="${INK}" stroke-width="2.6"/>
+        <circle cx="48.5" cy="32" r="3.6" fill="${BLUE}"/>`,
+      tiled: false,
+    },
+  ];
+  const svg = (m, { size, favicon = false }) =>
+    `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">${favicon && !m.tiled ? tile : ''}${m.svg}</svg>`;
+  document.getElementById('grid').innerHTML = MARKS.map((m) => `
+    <section class="card">
+      <h2>${m.name}</h2>
+      <p>${m.about}</p>
+      <div class="row">
+        <span class="big">${svg(m, { size: 132 })}</span>
+        <div class="sizes">
+          <figure>${svg(m, { size: 64, favicon: true })}64 px</figure>
+          <figure>${svg(m, { size: 32, favicon: true })}32 px</figure>
+          <figure>${svg(m, { size: 16, favicon: true })}16 px</figure>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab light">${svg(m, { size: 16, favicon: true })}Daniele Greco, system arch…</div>
+        <div class="tab dark">${svg(m, { size: 16, favicon: true })}Daniele Greco, system arch…</div>
+      </div>
+      <div class="bar">${svg(m, { size: 30 })}<b>Daniele Greco</b><span>· System Engineering consultant</span></div>
+    </section>`).join('');
+</script>
+</body>
+</html>
