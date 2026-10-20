@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Playground from './Playground/Playground.jsx';
+import Logo from './Logo.astro';
 import Reveal from './Reveal.astro';
 import { COPY, LANGS } from '../i18n/home.js';
 
@@ -23,13 +24,14 @@ const nav = [
 <Base lang={lang} title={t.meta.title} description={t.meta.description}>
   <header id="top-bar" class="sticky top-0 z-50 h-(--header) border-b border-white/60 bg-paper/35 backdrop-blur-md transition-[border-color,box-shadow] data-[scrolled]:border-ink/10 data-[scrolled]:shadow-[0_10px_30px_-24px_rgba(20,24,46,0.5)]">
     <div class="mx-auto flex h-full max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
-      <a href="#top" class="wide-type text-[17px] font-extrabold tracking-tight whitespace-nowrap" aria-label={t.bar.home}>
-        <span class="sm:hidden" aria-hidden="true">DG</span><span class="hidden sm:inline">Daniele Greco</span><span class="hidden font-sans text-[15px] font-medium tracking-normal text-ink/60 xl:inline" style="font-stretch: 100%"> · {t.bar.role}</span>
+      <a href="#top" class="wide-type flex items-center gap-2.5 text-[17px] font-extrabold tracking-tight whitespace-nowrap" aria-label={t.bar.home}>
+        <Logo class="size-8 shrink-0" />
+        <span class="hidden sm:inline">Daniele Greco<span class="hidden font-sans text-[15px] font-medium tracking-normal text-ink/60 xl:inline" style="font-stretch: 100%"> · {t.bar.role}</span></span>
       </a>
-      <div class="flex items-center gap-3 sm:gap-5">
-        <nav aria-label={t.bar.sections} class="hidden gap-5 text-[15px] font-semibold text-ink/65 md:flex lg:gap-6">
+      <div class="flex items-center gap-3 lg:gap-5">
+        <nav aria-label={t.bar.sections} class="hidden gap-4 text-[15px] font-semibold text-ink/65 md:flex lg:gap-6">
           {nav.map((group) => (
-            <span class="nav-group relative inline-flex gap-5 lg:gap-6" data-section={group.section}>
+            <span class="nav-group relative inline-flex gap-4 lg:gap-6" data-section={group.section}>
               {group.links.map((link) => (
                 <a href={link.href} class="py-1 hover:text-ink">{link.label}</a>
               ))}

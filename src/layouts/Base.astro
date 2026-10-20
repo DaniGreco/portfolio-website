@@ -26,7 +26,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="canonical" href={canonical} />
     {alternates && Object.entries(LANGS).map(([code, l]) => <link rel="alternate" hreflang={code} href={new URL(l.path, Astro.site)} />)}
     {alternates && <link rel="alternate" hreflang="x-default" href={new URL('/', Astro.site)} />}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="theme-color" content="#f4f6f8" />
     <meta property="og:type" content="website" />
