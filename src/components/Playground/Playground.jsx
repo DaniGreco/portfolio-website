@@ -13,18 +13,27 @@ const label = (p) => SERVICES[p.svc].label;
 const labels = (pods) => names(pods.map(label));
 const nodeNames = (ids) => names(ids.map((id) => NODES[id].name));
 
-// Groups that must not stay mostly down: after 5 seconds with two or more off, one comes back.
+// Groups that heal themselves: after 5 seconds with at least `min` machines off, one comes back.
+// Kubernetes workers come back even alone, like a managed cluster's node auto-repair.
 const REPAIR = {
+  workers: {
+    ids: ['w1', 'w2', 'w3', 'w4', 'w5'],
+    min: 1,
+    text: (n, name) => `${name} has been down for 5 seconds: node auto-repair brings it back.`,
+  },
   control: {
     ids: ['cp1', 'cp2', 'cp3'],
+    min: 2,
     text: (n, name) => `${n === 3 ? 'All three' : 'Two'} control nodes have been down for 5 seconds: the engineer on call brings ${name} back.`,
   },
   paas: {
     ids: ZONE_NODES.paas,
+    min: 2,
     text: (n, name) => `${n === 3 ? 'All three' : 'Two'} servers of the container fleet have been down for 5 seconds: the engineer on call brings ${name} back.`,
   },
   onprem: {
     ids: ZONE_NODES.onprem,
+    min: 2,
     text: (n, name) => `Both GPU servers have been down for 5 seconds: someone in the server room switches ${name} back on.`,
   },
 };
@@ -886,18 +895,18 @@ export default function Playground() {
   }
 
   // ---------- self-repair ----------
-  // When two or more machines of a group stay down for 5 seconds, one comes back.
+  // When enough machines of a group stay down for 5 seconds, one comes back.
   useEffect(() => {
     const st = sim.current;
     for (const [key, group] of Object.entries(REPAIR)) {
       const down = group.ids.filter((id) => st.nodes[id] === 'down');
-      if (down.length < 2 || repairs.current[key]) continue;
+      if (down.length < group.min || repairs.current[key]) continue;
       const g = gen.current;
       repairs.current[key] = setTimeout(() => {
         repairs.current[key] = 0;
         if (g !== gen.current) return;
         const still = group.ids.filter((id) => sim.current.nodes[id] === 'down');
-        if (still.length < 2) return;
+        if (still.length < group.min) return;
         const id = pickOne(still);
         log(group.text(still.length, NODES[id].name), 'warn');
         switchOn(id);
