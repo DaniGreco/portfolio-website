@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Same mark as src/components/Logo.astro. -->
+  <!-- The DG mark: the two letters cut into the units of a server rack, one green light per unit. -->
   <rect x="2" y="2" width="60" height="60" rx="13" fill="#14182e"/>
   <path d="M11 16H17A10 10 0 0 1 27 26V38A10 10 0 0 1 17 48H11Z" fill="none" stroke="#eef1f8" stroke-width="8" stroke-linejoin="round"/>
   <path d="M54 23A7 7 0 0 0 47 16H45A8 8 0 0 0 37 24V40A8 8 0 0 0 45 48H47A7 7 0 0 0 54 41V34H47" fill="none" stroke="#eef1f8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
