@@ -12,6 +12,22 @@ const label = (p) => SERVICES[p.svc].label;
 const labels = (pods) => names(pods.map(label));
 const nodeNames = (ids) => names(ids.map((id) => NODES[id].name));
 
+// Groups that must not stay mostly down: after 5 seconds with two or more off, one comes back.
+const REPAIR = {
+  control: {
+    ids: ['cp1', 'cp2', 'cp3'],
+    text: (n, name) => `${n === 3 ? 'All three' : 'Two'} control nodes have been down for 5 seconds: the engineer on call brings ${name} back.`,
+  },
+  paas: {
+    ids: ZONE_NODES.paas,
+    text: (n, name) => `${n === 3 ? 'All three' : 'Two'} servers of the container fleet have been down for 5 seconds: the engineer on call brings ${name} back.`,
+  },
+  onprem: {
+    ids: ZONE_NODES.onprem,
+    text: (n, name) => `Both GPU servers have been down for 5 seconds: someone in the server room switches ${name} back on.`,
+  },
+};
+
 // ---------- geometry ----------
 
 function podBoxes(L, s) {
@@ -484,6 +500,7 @@ export default function Playground() {
   const ids = useRef(0);
   const started = useRef(0);
   const logRef = useRef(null);
+  const repairs = useRef({});
   const reduce = useReducedMotion();
   const speed = reduce ? 0.3 : 1;
 
@@ -857,10 +874,115 @@ export default function Playground() {
 
   function reset() {
     gen.current += 1;
+    Object.values(repairs.current).forEach(clearTimeout);
+    repairs.current = {};
     commit(initialState());
     setSelected(null);
     log('Everything is back to how it started.');
   }
+
+  // ---------- self-repair ----------
+  // When two or more machines of a group stay down for 5 seconds, one comes back.
+  useEffect(() => {
+    const st = sim.current;
+    for (const [key, group] of Object.entries(REPAIR)) {
+      const down = group.ids.filter((id) => st.nodes[id] === 'down');
+      if (down.length < 2 || repairs.current[key]) continue;
+      const g = gen.current;
+      repairs.current[key] = setTimeout(() => {
+        repairs.current[key] = 0;
+        if (g !== gen.current) return;
+        const still = group.ids.filter((id) => sim.current.nodes[id] === 'down');
+        if (still.length < 2) return;
+        const id = pickOne(still);
+        log(group.text(still.length, NODES[id].name), 'warn');
+        switchOn(id);
+      }, 5000);
+    }
+  });
+  useEffect(() => () => Object.values(repairs.current).forEach(clearTimeout), []);
+
+  // ---------- autoplay ----------
+  // While the demo is on screen, something happens every few seconds. A click or a key press
+  // inside the demo hands it to the visitor for 20 seconds; the pause button stops it.
+  const [autoplay, setAutoplay] = useState(true);
+  const rootRef = useRef(null);
+  const inView = useRef(false);
+  const handsOn = useRef(0);
+  const autoplayOn = useRef(true);
+  const latest = useRef({});
+  latest.current = { openPage, askAssistant, switchOffRandom, switchOn, shipRelease, addServer };
+  autoplayOn.current = autoplay && !reduce;
+
+  const autoStep = () => {
+    if (!autoplayOn.current || !inView.current || document.visibilityState !== 'visible' || Date.now() < handsOn.current) return;
+    const st = sim.current;
+    const a = latest.current;
+    const down = Object.keys(NODES).filter((id) => st.nodes[id] === 'down');
+    const options = [
+      [a.openPage, 3],
+      [a.askAssistant, 2.5],
+      [a.switchOffRandom, down.length < 3 ? 1.6 : 0],
+      [() => a.switchOn(pickOne(down)), down.length ? 1.4 : 0],
+      [a.shipRelease, st.busy.release ? 0 : 0.9],
+      [a.addServer, nextSpare(st) && !st.busy.add ? 0.5 : 0],
+    ];
+    let r = Math.random() * options.reduce((n, [, w]) => n + w, 0);
+    for (const [fn, w] of options) {
+      r -= w;
+      if (r <= 0) {
+        fn();
+        return;
+      }
+    }
+  };
+  const autoRef = useRef(autoStep);
+  autoRef.current = autoStep;
+
+  useEffect(() => {
+    if (reduce) setAutoplay(false);
+  }, [reduce]);
+
+  useEffect(() => {
+    if (!autoplay || reduce) return undefined;
+    let timer = 0;
+    const tick = () => {
+      timer = setTimeout(() => {
+        autoRef.current();
+        tick();
+      }, 3000 + Math.random() * 4000);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [autoplay, reduce]);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return undefined;
+    let first = 0;
+    const io = new IntersectionObserver(([entry]) => {
+      const was = inView.current;
+      inView.current = entry.isIntersecting;
+      // Arriving on the demo: start right away instead of waiting for the next tick.
+      if (!was && inView.current) {
+        clearTimeout(first);
+        first = setTimeout(() => autoRef.current(), 1200);
+      }
+    }, { threshold: 0.5 });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      clearTimeout(first);
+    };
+  }, []);
+
+  const takeOver = () => {
+    handsOn.current = Date.now() + 20000;
+  };
+  const toggleAutoplay = () => {
+    handsOn.current = 0;
+    setAutoplay((on) => !on);
+  };
 
   const info = describe(selected, s);
   const spare = nextSpare(s);
@@ -899,7 +1021,7 @@ export default function Playground() {
   );
 
   return (
-    <div className="playground">
+    <div ref={rootRef} className="playground" onPointerDown={takeOver} onKeyDown={takeOver}>
       <div className="flex flex-wrap gap-2 [grid-area:actions] lg:flex-col lg:items-stretch">
         <Action swatch="bg-traffic" onClick={openPage}>Open a web page</Action>
         <Action swatch="bg-gpu" onClick={askAssistant}>Ask the AI assistant</Action>
@@ -908,9 +1030,14 @@ export default function Playground() {
         <Action swatch="bg-mesh" onClick={addServer} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
           Add a server
         </Action>
-        <button type="button" onClick={reset} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink lg:px-4">
-          Reset the map
-        </button>
+        <div className="flex flex-wrap items-center">
+          <button type="button" onClick={reset} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink lg:px-4">
+            Reset the map
+          </button>
+          <button type="button" onClick={toggleAutoplay} aria-pressed={!autoplay} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink">
+            {autoplay ? 'Pause autoplay' : 'Resume autoplay'}
+          </button>
+        </div>
       </div>
 
       <div className="min-w-0 [grid-area:map]">
@@ -922,7 +1049,7 @@ export default function Playground() {
 
       <section aria-label="What is happening" className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log] lg:min-h-[8rem]">
         <div ref={logRef} className="absolute inset-0 overflow-y-auto p-5">
-          <ol aria-live="polite" className="space-y-2 text-[14px] leading-snug">
+          <ol aria-live={autoplay ? 'off' : 'polite'} className="space-y-2 text-[14px] leading-snug">
             {s.log.length === 0 && <li className="text-white/60">Waiting for something to happen.</li>}
             {s.log.map((l) => (
               <li key={l.id} className="flex gap-3">
