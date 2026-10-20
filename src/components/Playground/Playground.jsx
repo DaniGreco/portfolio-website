@@ -1030,12 +1030,27 @@ export default function Playground() {
         <Action swatch="bg-mesh" onClick={addServer} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
           Add a server
         </Action>
-        <div className="flex flex-wrap items-center">
-          <button type="button" onClick={reset} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink lg:px-4">
+        <div className="glass flex items-center justify-between gap-3 py-1.5 pr-1.5 pl-2">
+          <button type="button" onClick={reset} className="rounded-full px-2 py-1.5 text-left text-[14px] font-semibold text-ink/75 underline decoration-ink/20 underline-offset-4 hover:text-ink">
             Reset the map
           </button>
-          <button type="button" onClick={toggleAutoplay} aria-pressed={!autoplay} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink">
-            {autoplay ? 'Pause autoplay' : 'Resume autoplay'}
+          <button
+            type="button"
+            onClick={toggleAutoplay}
+            aria-label={autoplay ? 'Pause autoplay' : 'Start autoplay'}
+            title={autoplay ? 'Pause autoplay' : 'Start autoplay'}
+            className="flex size-9 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-white text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+          >
+            {autoplay ? (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
