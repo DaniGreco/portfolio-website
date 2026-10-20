@@ -388,10 +388,10 @@ function DetailCard({ L, a, info, onClose, actions, addDisabled }) {
       </div>
       <p className="mt-1.5 text-[14px] leading-relaxed text-ink/80">{info.body}</p>
       {info.status && <p className="mt-1.5 text-[14px] leading-relaxed font-semibold">{info.status}</p>}
-      {info.action === 'off' && <div className="mt-3"><Action swatch="bg-alarm" onClick={actions.off}>Switch off</Action></div>}
-      {info.action === 'on' && <div className="mt-3"><Action swatch="bg-mesh" onClick={actions.on}>Switch on</Action></div>}
+      {info.action === 'off' && <div className="mt-3"><Action dot="text-alarm" onClick={actions.off}>Switch off</Action></div>}
+      {info.action === 'on' && <div className="mt-3"><Action dot="text-mesh" onClick={actions.on}>Switch on</Action></div>}
       {info.action === 'add' && (
-        <div className="mt-3"><Action swatch="bg-mesh" onClick={actions.add} disabled={addDisabled}>Add a server</Action></div>
+        <div className="mt-3"><Action dot="text-mesh" onClick={actions.add} disabled={addDisabled}>Add a server</Action></div>
       )}
     </div>
   );
@@ -472,18 +472,20 @@ const TONE = {
   alarm: 'bg-alarm',
 };
 
-function Swatch({ className }) {
-  return <span aria-hidden="true" className={`inline-block h-1.5 w-5 rounded-full ${className}`} />;
+// The dot of an event button lights up each time that event fires; `fired` counts the firings,
+// and a new count remounts the dot so its light-up animation plays again.
+function Dot({ color, fired }) {
+  return <span aria-hidden="true" className={`event-dot ${color} ${fired ? 'fire' : ''}`} />;
 }
 
-function Action({ swatch, children, ...props }) {
+function Action({ dot, fired = 0, children, ...props }) {
   return (
     <button
       type="button"
       className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-white px-3.5 py-1.5 text-[14px] font-semibold text-ink transition-colors hover:border-ink/40 disabled:cursor-not-allowed disabled:opacity-40 md:gap-2.5 md:px-4 md:py-2 md:text-[15px]"
       {...props}
     >
-      <Swatch className={swatch} />
+      <Dot key={fired} color={dot} fired={fired} />
       {children}
     </button>
   );
@@ -902,6 +904,26 @@ export default function Playground() {
   });
   useEffect(() => () => Object.values(repairs.current).forEach(clearTimeout), []);
 
+  // ---------- events ----------
+  // Buttons and autoplay go through the same entry points, so each event lights its dot.
+  const [fired, setFired] = useState({});
+  const fire = (key) => setFired((f) => ({ ...f, [key]: (f[key] || 0) + 1 }));
+  const run = {
+    page: () => { fire('page'); openPage(); },
+    ask: () => { fire('ask'); askAssistant(); },
+    off: () => { fire('off'); switchOffRandom(); },
+    release: () => {
+      if (sim.current.busy.release) return;
+      fire('release');
+      shipRelease();
+    },
+    add: () => {
+      if (!nextSpare(sim.current) || sim.current.busy.add) return;
+      fire('add');
+      addServer();
+    },
+  };
+
   // ---------- autoplay ----------
   // While the demo is on screen, something happens every few seconds. A click or a key press
   // inside the demo hands it to the visitor for 20 seconds; the pause button stops it.
@@ -911,7 +933,7 @@ export default function Playground() {
   const handsOn = useRef(0);
   const autoplayOn = useRef(true);
   const latest = useRef({});
-  latest.current = { openPage, askAssistant, switchOffRandom, switchOn, shipRelease, addServer };
+  latest.current = { openPage: run.page, askAssistant: run.ask, switchOffRandom: run.off, switchOn, shipRelease: run.release, addServer: run.add };
   autoplayOn.current = autoplay && !reduce;
 
   const autoStep = () => {
@@ -950,7 +972,7 @@ export default function Playground() {
       timer = setTimeout(() => {
         autoRef.current();
         tick();
-      }, 3000 + Math.random() * 4000);
+      }, 1500 + Math.random() * 1500);
     };
     tick();
     return () => clearTimeout(timer);
@@ -966,7 +988,7 @@ export default function Playground() {
       // Arriving on the demo: start right away instead of waiting for the next tick.
       if (!was && inView.current) {
         clearTimeout(first);
-        first = setTimeout(() => autoRef.current(), 1200);
+        first = setTimeout(() => autoRef.current(), 800);
       }
     }, { threshold: 0.5 });
     io.observe(el);
@@ -988,7 +1010,11 @@ export default function Playground() {
   const spare = nextSpare(s);
   const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
   const cardActions = {
-    off: () => info && switchOff(info.node),
+    off: () => {
+      if (!info) return;
+      fire('off');
+      switchOff(info.node);
+    },
     on: () => info && switchOn(info.node),
     add: addServer,
   };
@@ -1023,13 +1049,6 @@ export default function Playground() {
   return (
     <div ref={rootRef} className="playground" onPointerDown={takeOver} onKeyDown={takeOver}>
       <div className="flex flex-wrap gap-2 [grid-area:actions] lg:flex-col lg:items-stretch">
-        <Action swatch="bg-traffic" onClick={openPage}>Open a web page</Action>
-        <Action swatch="bg-gpu" onClick={askAssistant}>Ask the AI assistant</Action>
-        <Action swatch="bg-alarm" onClick={switchOffRandom}>Switch off a random server</Action>
-        <Action swatch="bg-ink" onClick={shipRelease} disabled={s.busy.release}>Ship a release</Action>
-        <Action swatch="bg-mesh" onClick={addServer} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
-          Add a server
-        </Action>
         <div className="glass flex items-center justify-between gap-3 py-1.5 pr-1.5 pl-2">
           <button type="button" onClick={reset} className="rounded-full px-2 py-1.5 text-left text-[14px] font-semibold text-ink/75 underline decoration-ink/20 underline-offset-4 hover:text-ink">
             Reset the map
@@ -1053,6 +1072,13 @@ export default function Playground() {
             )}
           </button>
         </div>
+        <Action dot="text-traffic" fired={fired.page} onClick={run.page}>Open a web page</Action>
+        <Action dot="text-gpu" fired={fired.ask} onClick={run.ask}>Ask the AI assistant</Action>
+        <Action dot="text-alarm" fired={fired.off} onClick={run.off}>Switch off a random server</Action>
+        <Action dot="text-ink" fired={fired.release} onClick={run.release} disabled={s.busy.release}>Ship a release</Action>
+        <Action dot="text-mesh" fired={fired.add} onClick={run.add} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
+          Add a server
+        </Action>
       </div>
 
       <div className="min-w-0 [grid-area:map]">

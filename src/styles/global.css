@@ -102,6 +102,47 @@ li.now .when {
   color: var(--color-traffic);
 }
 
+/* Event buttons: the dot is dim, and lights up with a glow when its event fires. */
+.event-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+}
+.event-dot.fire {
+  animation: dot-fire 1.3s ease-out;
+}
+/* Without motion the dot only lights up and dims, it does not grow. */
+@media (prefers-reduced-motion: reduce) {
+  .event-dot.fire {
+    animation-name: dot-glow;
+  }
+}
+@keyframes dot-glow {
+  0%,
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+@keyframes dot-fire {
+  0%,
+  35% {
+    opacity: 1;
+    transform: scale(1.35);
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent), 0 0 14px currentColor;
+  }
+  100% {
+    opacity: 0.3;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 /* A tinted glass panel, for short hints that should stand out from the plain ones. */
 .glass.glass-blue {
   border-color: rgb(35 87 214 / 0.2);
