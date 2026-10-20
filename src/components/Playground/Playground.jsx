@@ -7,6 +7,7 @@ import {
 import { TALL, WIDE } from './layouts.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const LOG_LINES = 30;
 const INITIAL_SEQ = initialState().seq;
 const label = (p) => SERVICES[p.svc].label;
 const labels = (pods) => names(pods.map(label));
@@ -518,7 +519,8 @@ export default function Playground() {
   const log = (text, tone = 'info') => {
     ids.current += 1;
     const t = Math.max(0, Math.round((Date.now() - started.current) / 1000));
-    update((st) => ({ ...st, log: [...st.log.slice(-40), { id: ids.current, t, text, tone }] }));
+    // The log keeps the newest LOG_LINES lines: the oldest go as new ones arrive.
+    update((st) => ({ ...st, log: [...st.log.slice(-(LOG_LINES - 1)), { id: ids.current, t, text, tone }] }));
   };
   const setPods = (fn) => update((st) => ({ ...st, pods: fn(st.pods) }));
   const markRunning = (placed) => {
@@ -972,7 +974,7 @@ export default function Playground() {
       timer = setTimeout(() => {
         autoRef.current();
         tick();
-      }, 1500 + Math.random() * 1500);
+      }, 1000 + Math.random() * 1000);
     };
     tick();
     return () => clearTimeout(timer);
@@ -1023,7 +1025,7 @@ export default function Playground() {
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [s.log.length]);
+  }, [s.log.at(-1)?.id]);
   useEffect(() => {
     const el = logRef.current;
     if (!el) return undefined;

@@ -22,7 +22,7 @@ const HOLE = 4000; // pull of the pointer: HOLE / (distance² + SOFT²), in px p
 const SOFT = 60; // px: softens the pull near the centre
 const SPIN = 0.6; // sideways share of the pull, so strands spiral instead of falling straight
 const MAX_SPEED = 6;
-const DENSITY = 2880; // one strand per this many px² (about 450 on a 1440 × 900 screen)
+const DENSITY = 3700; // one strand per this many px² (about 350 on a 1440 × 900 screen)
 const MARGIN = 20; // px outside the screen where strands turn around
 
 export function start(canvas) {
