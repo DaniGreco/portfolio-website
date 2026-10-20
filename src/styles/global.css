@@ -1,10 +1,8 @@
 @import "tailwindcss";
-@import "@fontsource-variable/overpass";
-@import "@fontsource-variable/overpass-mono";
+@import "@fontsource-variable/archivo/standard.css";
 
 @theme {
-  --font-sans: "Overpass Variable", system-ui, sans-serif;
-  --font-mono: "Overpass Mono Variable", ui-monospace, monospace;
+  --font-sans: "Archivo Variable", system-ui, sans-serif;
 
   --color-paper: #f4f6f8;
   --color-ink: #14182e;
@@ -17,23 +15,68 @@
 }
 
 @layer base {
+  :root {
+    --header: 4rem;
+  }
+
   html {
     color-scheme: light;
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    scroll-padding-top: var(--header);
+    scroll-snap-type: y proximity;
   }
 
-  :focus-visible {
-    outline: 3px solid var(--color-traffic);
-    outline-offset: 3px;
+  /* A firm snap from section to section where every section fits the screen. */
+  @media (min-width: 1024px) and (min-height: 640px) {
+    html {
+      scroll-snap-type: y mandatory;
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
     html {
       scroll-behavior: smooth;
     }
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-traffic);
+    outline-offset: 3px;
+  }
+}
+
+.snap {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: calc(100dvh - var(--header));
+}
+
+.wide-type {
+  font-stretch: 112%;
+}
+
+/* Map section: on phones everything stacks; on desktop the map takes most of the screen,
+   sized so the whole map fits in the viewport, with the controls and the log on its right. */
+.playground {
+  display: grid;
+  gap: 1rem 1.25rem;
+  grid-template-areas: "actions" "map" "log" "hint" "note";
+}
+@media (min-width: 1024px) {
+  .playground {
+    --map-w: calc((100dvh - var(--header) - 6.5rem) * 1.5385);
+    grid-template-columns: minmax(0, var(--map-w)) 20rem;
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas: "map actions" "map log" "map hint" "note .";
+    justify-content: center;
+  }
+}
+@media (min-width: 1536px) {
+  .playground {
+    grid-template-columns: minmax(0, var(--map-w)) 22rem;
   }
 }
 

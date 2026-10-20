@@ -4,7 +4,7 @@ import Playground from '../components/Playground/Playground.jsx';
 
 const year = new Date().getFullYear();
 
-const work = [
+const experience = [
   {
     years: '2026 – now',
     role: 'Software and infrastructure engineer',
@@ -35,118 +35,166 @@ const studies = [
     link: { href: 'https://github.com/DaniGreco/BSc_Thesis', label: 'Thesis code on GitHub' },
   },
 ];
+
+const nav = [
+  { id: 'map', label: 'Map' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'studies', label: 'Studies' },
+  { id: 'contact', label: 'Contact' },
+];
 ---
 
 <Base
-  title="Daniele Greco, software and infrastructure engineer"
-  description="I build and run the infrastructure behind AI products: GPU servers on-prem, cloud fleets and the network between them. Explore a working model of it."
+  title="Daniele Greco, system architect and software engineer"
+  description="I build and run the infrastructure behind critical products for airports, manufacturing and more. Explore an interactive model of it."
 >
-  <header class="mx-auto flex max-w-[1240px] items-center justify-between px-4 pt-5 md:px-6">
-    <a href="/" class="text-[17px] font-extrabold tracking-tight">Daniele Greco</a>
-    <nav aria-label="Sections" class="flex gap-5 text-[15px] font-semibold text-ink/75">
-      <a href="#map" class="hover:text-ink">Map</a>
-      <a href="#work" class="hover:text-ink">Work</a>
-      <a href="#contact" class="hover:text-ink">Contact</a>
-    </nav>
+  <header id="top-bar" class="sticky top-0 z-50 h-(--header) border-b border-transparent bg-paper/85 backdrop-blur-md transition-colors data-[scrolled]:border-ink/10">
+    <div class="mx-auto flex h-full max-w-[1400px] items-center justify-between px-4 md:px-6">
+      <a href="#top" class="wide-type text-[17px] font-extrabold tracking-tight whitespace-nowrap" aria-label="Daniele Greco, back to the top">
+        <span class="sm:hidden" aria-hidden="true">DG</span><span class="hidden sm:inline">Daniele Greco</span>
+      </a>
+      <nav aria-label="Sections" class="flex gap-3.5 text-[14px] font-semibold text-ink/65 sm:gap-6 sm:text-[15px]">
+        {nav.map((n) => (
+          <a href={`#${n.id}`} data-nav={n.id} class="py-1 decoration-2 underline-offset-[6px] hover:text-ink aria-[current=true]:text-ink aria-[current=true]:underline">
+            {n.label}
+          </a>
+        ))}
+      </nav>
+    </div>
   </header>
 
   <main>
-    <section class="mx-auto grid max-w-[1240px] gap-6 px-4 pt-14 pb-10 md:grid-cols-12 md:items-end md:px-6 md:pt-20">
-      <h1 class="text-[clamp(2.5rem,6.2vw,4.75rem)] leading-[0.98] font-extrabold tracking-[-0.025em] md:col-span-7">
-        I build and run the machines behind AI products.
-      </h1>
-      <div class="space-y-3 text-[18px] leading-relaxed text-ink/80 md:col-span-5 md:pb-2">
-        <p>
-          Software and infrastructure engineer in Bergamo, Italy. I look after GPU servers in a customer's server room, two
-          fleets of cloud servers and the network that ties them together.
+    <section id="top" class="snap relative flex flex-col justify-center overflow-hidden">
+      <canvas id="field" class="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true"></canvas>
+      <div class="relative mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-16 md:px-6 lg:grid-cols-12 lg:items-end">
+        <h1 class="wide-type text-[clamp(2.2rem,4.6vw,4.3rem)] leading-[1.03] font-extrabold tracking-[-0.02em] lg:col-span-8">
+          I build and run the infrastructure behind critical products for airports, manufacturing and more.
+        </h1>
+        <p class="max-w-[44ch] text-[18px] leading-relaxed text-ink/80 lg:col-span-4 lg:pb-2">
+          PhD student with several years of experience as a system architect and software engineer, based in Bergamo,
+          Italy. I build and manage all kinds of clusters, from on-premise server rooms to cloud-native environments,
+          following the highest security standards.
         </p>
-        <p>The map below is a working model of that setup. Send a request through it, switch a server off, ship a release.</p>
       </div>
     </section>
 
-    <section id="map" aria-label="Infrastructure map" class="mx-auto max-w-[1240px] scroll-mt-6 px-4 md:px-6">
-      <Playground client:load />
+    <section id="map" aria-label="Infrastructure map" class="snap flex flex-col justify-center">
+      <div class="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">
+        <Playground client:load />
+      </div>
     </section>
 
-    <section id="work" class="mx-auto mt-24 max-w-[1240px] scroll-mt-6 px-4 md:mt-32 md:px-6">
-      <div class="grid gap-x-10 gap-y-12 md:grid-cols-12">
-        <div class="md:col-span-7">
-          <h2 class="text-[28px] font-extrabold tracking-tight">Work</h2>
-          <ol class="mt-6 divide-y divide-ink/10 border-t border-ink/10">
-            {work.map((w) => (
-              <li class="grid gap-1 py-6 sm:grid-cols-[9rem_1fr] sm:gap-6">
-                <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{w.years}</span>
-                <div>
-                  <h3 class="text-[19px] leading-snug font-bold">
-                    {w.role},{' '}
-                    <a href={w.href} class="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">{w.org}</a>
-                  </h3>
-                  <p class="mt-2 max-w-[62ch] text-[16px] leading-relaxed text-ink/80">{w.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+    <section id="experience" class="snap flex flex-col justify-center">
+      <div class="mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-16 md:px-6 lg:grid-cols-12">
+        <h2 class="wide-type text-[clamp(2rem,4vw,3.4rem)] leading-none font-extrabold tracking-tight lg:col-span-4">Experience</h2>
+        <ol class="divide-y divide-ink/10 border-t border-ink/10 lg:col-span-8">
+          {experience.map((w) => (
+            <li class="grid gap-1 py-7 sm:grid-cols-[9rem_1fr] sm:gap-6">
+              <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{w.years}</span>
+              <div>
+                <h3 class="text-[20px] leading-snug font-bold">
+                  {w.role},{' '}
+                  <a href={w.href} class="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">{w.org}</a>
+                </h3>
+                <p class="mt-2 max-w-[64ch] text-[17px] leading-relaxed text-ink/80">{w.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
 
-          <h2 class="mt-16 text-[28px] font-extrabold tracking-tight">Studies</h2>
-          <ol class="mt-6 divide-y divide-ink/10 border-t border-ink/10">
-            {studies.map((s) => (
-              <li class="grid gap-1 py-6 sm:grid-cols-[9rem_1fr] sm:gap-6">
-                <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{s.years}</span>
-                <div>
-                  <h3 class="text-[19px] leading-snug font-bold">{s.role}, {s.org}</h3>
-                  {s.text && <p class="mt-2 max-w-[62ch] text-[16px] leading-relaxed text-ink/80">{s.text}</p>}
-                  {s.link && (
-                    <a href={s.link.href} class="mt-2 inline-block text-[16px] font-semibold text-traffic underline decoration-traffic/30 underline-offset-4 hover:decoration-traffic">
-                      {s.link.label}
-                    </a>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
+    <section id="studies" class="snap flex flex-col justify-center">
+      <div class="mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-16 md:px-6 lg:grid-cols-12">
+        <h2 class="wide-type text-[clamp(2rem,4vw,3.4rem)] leading-none font-extrabold tracking-tight lg:col-span-4">Studies</h2>
+        <ol class="divide-y divide-ink/10 border-t border-ink/10 lg:col-span-8">
+          {studies.map((s) => (
+            <li class="grid gap-1 py-7 sm:grid-cols-[9rem_1fr] sm:gap-6">
+              <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{s.years}</span>
+              <div>
+                <h3 class="text-[20px] leading-snug font-bold">{s.role}, {s.org}</h3>
+                {s.text && <p class="mt-2 max-w-[64ch] text-[17px] leading-relaxed text-ink/80">{s.text}</p>}
+                {s.link && (
+                  <a href={s.link.href} class="mt-2 inline-block text-[17px] font-semibold text-traffic underline decoration-traffic/30 underline-offset-4 hover:decoration-traffic">
+                    {s.link.label}
+                  </a>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section id="contact" class="snap flex flex-col">
+      <div class="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 py-10 md:px-6">
+        <div class="grid gap-10 rounded-[26px] bg-ink px-6 py-12 text-white md:px-12 md:py-16 lg:grid-cols-12 lg:items-center">
+          <div class="lg:col-span-8">
+            <h2 class="wide-type text-[clamp(2rem,4vw,3.4rem)] leading-none font-extrabold tracking-tight">Contact</h2>
+            <p class="mt-4 max-w-[52ch] text-[18px] leading-relaxed text-white/80">Email is the fastest way to reach me.</p>
+            <a
+              href="mailto:info@danielegreco.com"
+              class="wide-type mt-6 inline-block text-[clamp(1.5rem,4.4vw,3rem)] leading-tight font-extrabold tracking-tight break-all underline decoration-white/30 underline-offset-[6px] hover:decoration-white"
+            >
+              info@danielegreco.com
+            </a>
+            <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[17px] font-semibold">
+              <li><a href="/linkedin" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">LinkedIn</a></li>
+              <li><a href="/github" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">GitHub</a></li>
+            </ul>
+          </div>
+          <div class="lg:col-span-4">
+            <img
+              src="/images/daniele-480.webp"
+              srcset="/images/daniele-480.webp 480w, /images/daniele-960.webp 960w"
+              sizes="(min-width: 1024px) 320px, 70vw"
+              width="480"
+              height="480"
+              alt="Daniele Greco"
+              loading="lazy"
+              class="aspect-square w-full max-w-[300px] rounded-[22px] bg-white object-cover"
+            />
+            <p class="mt-5 max-w-[40ch] text-[16px] leading-relaxed text-white/75">
+              Curiosity drives most of what I do. Besides technology I read about maths, finance, music, cinema and
+              philosophy, and I like taking ideas from one field into another.
+            </p>
+          </div>
         </div>
-
-        <aside class="md:col-span-4 md:col-start-9">
-          <img
-            src="/images/daniele-480.webp"
-            srcset="/images/daniele-480.webp 480w, /images/daniele-960.webp 960w"
-            sizes="(min-width: 768px) 320px, 80vw"
-            width="480"
-            height="480"
-            alt="Daniele Greco"
-            loading="lazy"
-            class="aspect-square w-full max-w-[360px] rounded-[22px] bg-white object-cover"
-          />
-          <p class="mt-6 max-w-[42ch] text-[16px] leading-relaxed text-ink/80">
-            Curiosity drives most of what I do. Besides technology and engineering I read about maths, finance, music, cinema
-            and philosophy, and I like taking ideas from one field into another.
-          </p>
-        </aside>
       </div>
-    </section>
-
-    <section id="contact" class="mx-auto mt-24 max-w-[1240px] scroll-mt-6 px-4 md:mt-32 md:px-6">
-      <div class="rounded-[22px] bg-ink px-6 py-12 text-white md:px-12 md:py-16">
-        <h2 class="text-[28px] font-extrabold tracking-tight">Get in touch</h2>
-        <p class="mt-3 max-w-[52ch] text-[18px] leading-relaxed text-white/80">Email is the fastest way to reach me.</p>
-        <a
-          href="mailto:info@danielegreco.com"
-          class="mt-6 inline-block text-[clamp(1.6rem,5vw,3rem)] leading-tight font-extrabold tracking-tight break-all underline decoration-white/30 underline-offset-[6px] hover:decoration-white"
-        >
-          info@danielegreco.com
+      <footer class="mx-auto flex w-full max-w-[1400px] flex-wrap justify-between gap-3 px-4 pb-8 text-[14px] text-muted md:px-6">
+        <span>© {year} Daniele Greco</span>
+        <a href="https://github.com/DaniGreco/portfolio-website" class="underline decoration-ink/20 underline-offset-4 hover:text-ink">
+          Source code on GitHub
         </a>
-        <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[16px] font-semibold">
-          <li><a href="/linkedin" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">LinkedIn</a></li>
-          <li><a href="/github" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">GitHub</a></li>
-        </ul>
-      </div>
+      </footer>
     </section>
   </main>
-
-  <footer class="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 px-4 py-10 text-[14px] text-muted md:px-6">
-    <span>© {year} Daniele Greco</span>
-    <a href="https://github.com/DaniGreco/portfolio-website" class="underline decoration-ink/20 underline-offset-4 hover:text-ink">
-      Source code on GitHub
-    </a>
-  </footer>
 </Base>
+
+<script>
+  import { startField } from '../scripts/field.js';
+
+  const canvas = document.getElementById('field');
+  if (canvas instanceof HTMLCanvasElement) startField(canvas);
+
+  // Top bar: a hairline once the page scrolls, and the current section underlined.
+  const bar = document.getElementById('top-bar');
+  const onScroll = () => bar?.toggleAttribute('data-scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  const links = [...document.querySelectorAll('[data-nav]')];
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        for (const link of links) link.setAttribute('aria-current', String(link.getAttribute('data-nav') === entry.target.id));
+      }
+    },
+    { rootMargin: '-45% 0px -50% 0px' },
+  );
+  for (const id of ['top', 'map', 'experience', 'studies', 'contact']) {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  }
+</script>

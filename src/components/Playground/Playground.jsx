@@ -252,6 +252,7 @@ function MapSvg({ L, s, reduce, selected, onSelect }) {
   const zoneSel = (id) => selected?.type === 'zone' && selected.id === id;
   return (
     <svg viewBox={`0 0 ${L.width} ${L.height}`} className="block h-auto w-full select-none font-sans" role="group" aria-label="Map of the infrastructure">
+      <rect width={L.width} height={L.height} className="fill-transparent" onClick={() => onSelect(null)} aria-hidden="true" />
       {Object.entries(L.zones).map(([id, z]) => (
         <g key={id} className="hit cursor-pointer" aria-label={ZONES[id].name} {...press(() => onSelect({ type: 'zone', id }))}>
           <rect x={z.x} y={z.y} width={z.w} height={z.h} rx={18} className={ZONE_FILL[id]} strokeWidth={zoneSel(id) ? 2.5 : 1} />
@@ -322,6 +323,71 @@ function MapSvg({ L, s, reduce, selected, onSelect }) {
         <Packet key={p.id} L={L} packet={p} boxes={boxes} reduce={reduce} />
       ))}
     </svg>
+  );
+}
+
+// ---------- detail card ----------
+
+function anchorOf(L, s, sel) {
+  if (sel.type === 'zone') {
+    if (sel.id === 'mesh') {
+      const [[x1, y1], [x2]] = L.mesh[0];
+      return { x: (x1 + x2) / 2 - 10, y: y1 + 50, w: 20, h: 20 };
+    }
+    const z = L.zones[sel.id];
+    return { x: z.x, y: z.y, w: z.w, h: 36 };
+  }
+  if (sel.type === 'station') {
+    const [x, y] = L.stations[sel.id].at;
+    return { x: x - 12, y: y - 12, w: 24, h: 24 };
+  }
+  if (sel.type === 'node') return L.tiles[sel.id];
+  if (sel.type === 'pod') return podBoxes(L, s).get(sel.id) || null;
+  return null;
+}
+
+// The card opens next to what was clicked: below it in the top half of the map, above it in the bottom half.
+function DetailCard({ L, a, info, onClose, actions, addDisabled }) {
+  const cx = ((a.x + a.w / 2) / L.width) * 100;
+  const below = a.y + a.h / 2 < L.height / 2;
+  const style = {
+    left: `clamp(8px, calc(${cx}% - 150px), calc(100% - 308px))`,
+    ...(below
+      ? { top: `calc(${((a.y + a.h) / L.height) * 100}% + 10px)` }
+      : { bottom: `calc(${100 - (a.y / L.height) * 100}% + 10px)` }),
+  };
+  return (
+    <div
+      role="region"
+      aria-live="polite"
+      aria-label={info.title}
+      style={style}
+      className="absolute z-10 w-[300px] max-w-[calc(100%-16px)] rounded-[18px] border border-ink/10 bg-white p-4 shadow-[0_18px_40px_-18px_rgba(20,24,46,0.45)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-[17px] leading-tight font-extrabold">{info.title}</h3>
+        <button type="button" onClick={onClose} aria-label="Close" className="-mt-1 -mr-1 size-7 shrink-0 rounded-full text-[20px] leading-none text-muted hover:bg-paper hover:text-ink">
+          ×
+        </button>
+      </div>
+      <p className="mt-1.5 text-[14px] leading-relaxed text-ink/80">{info.body}</p>
+      {info.status && <p className="mt-1.5 text-[14px] leading-relaxed font-semibold">{info.status}</p>}
+      {info.action === 'off' && <div className="mt-3"><Action swatch="bg-alarm" onClick={actions.off}>Switch off</Action></div>}
+      {info.action === 'on' && <div className="mt-3"><Action swatch="bg-mesh" onClick={actions.on}>Switch on</Action></div>}
+      {info.action === 'add' && (
+        <div className="mt-3"><Action swatch="bg-mesh" onClick={actions.add} disabled={addDisabled}>Add a server</Action></div>
+      )}
+    </div>
+  );
+}
+
+function MapBox({ L, s, reduce, selected, onSelect, info, actions, addDisabled }) {
+  const a = selected && info ? anchorOf(L, s, selected) : null;
+  return (
+    <div className="relative">
+      <MapSvg L={L} s={s} reduce={reduce} selected={selected} onSelect={onSelect} />
+      {a && <DetailCard L={L} a={a} info={info} onClose={() => onSelect(null)} actions={actions} addDisabled={addDisabled} />}
+    </div>
   );
 }
 
@@ -417,6 +483,7 @@ export default function Playground() {
   const gen = useRef(0);
   const ids = useRef(0);
   const started = useRef(0);
+  const logRef = useRef(null);
   const reduce = useReducedMotion();
   const speed = reduce ? 0.3 : 1;
 
@@ -797,12 +864,43 @@ export default function Playground() {
 
   const info = describe(selected, s);
   const spare = nextSpare(s);
-  const visibleLog = s.log.slice(-7);
   const fmt = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  const cardActions = {
+    off: () => info && switchOff(info.node),
+    on: () => info && switchOn(info.node),
+    add: addServer,
+  };
+
+  // The log always shows its newest lines, also when the panel changes size.
+  useEffect(() => {
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [s.log.length]);
+  useEffect(() => {
+    const el = logRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(() => { el.scrollTop = el.scrollHeight; });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setSelected(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
+
+  const box = (L) => (
+    <MapBox
+      L={L} s={s} reduce={reduce} selected={selected} onSelect={setSelected}
+      info={info} actions={cardActions} addDisabled={s.busy.add}
+    />
+  );
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2.5">
+    <div className="playground">
+      <div className="flex flex-wrap gap-2 [grid-area:actions] lg:flex-col lg:items-stretch">
         <Action swatch="bg-traffic" onClick={openPage}>Open a web page</Action>
         <Action swatch="bg-gpu" onClick={askAssistant}>Ask the AI assistant</Action>
         <Action swatch="bg-alarm" onClick={switchOffRandom}>Switch off a random server</Action>
@@ -810,60 +908,38 @@ export default function Playground() {
         <Action swatch="bg-mesh" onClick={addServer} disabled={!spare || s.busy.add} title={spare ? undefined : 'The model has room for five workers.'}>
           Add a server
         </Action>
-        <button type="button" onClick={reset} className="ml-auto rounded-full px-3 py-2 text-[15px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink">
-          Reset
+        <button type="button" onClick={reset} className="rounded-full px-3 py-1.5 text-left text-[14px] font-semibold text-muted underline decoration-ink/20 underline-offset-4 hover:text-ink lg:px-4">
+          Reset the map
         </button>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-[22px] border border-ink/10 bg-white">
-        <div className="hidden md:block">
-          <MapSvg L={WIDE} s={s} reduce={reduce} selected={selected} onSelect={setSelected} />
-        </div>
-        <div className="md:hidden">
-          <MapSvg L={TALL} s={s} reduce={reduce} selected={selected} onSelect={setSelected} />
+      <div className="min-w-0 [grid-area:map]">
+        <div className="overflow-visible rounded-[22px] border border-ink/10 bg-white">
+          <div className="hidden md:block">{box(WIDE)}</div>
+          <div className="md:hidden">{box(TALL)}</div>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <section aria-label="Details" className="rounded-[22px] border border-ink/10 bg-white p-5">
-          {info ? (
-            <>
-              <h3 className="text-[19px] font-extrabold leading-tight text-ink">{info.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-ink/80">{info.body}</p>
-              {info.status && <p className="mt-2 text-[15px] font-semibold leading-relaxed text-ink">{info.status}</p>}
-              {info.action === 'off' && (
-                <div className="mt-4"><Action swatch="bg-alarm" onClick={() => switchOff(info.node)}>Switch off</Action></div>
-              )}
-              {info.action === 'on' && (
-                <div className="mt-4"><Action swatch="bg-mesh" onClick={() => switchOn(info.node)}>Switch on</Action></div>
-              )}
-              {info.action === 'add' && (
-                <div className="mt-4"><Action swatch="bg-mesh" onClick={addServer} disabled={s.busy.add}>Add a server</Action></div>
-              )}
-            </>
-          ) : (
-            <p className="text-[15px] leading-relaxed text-ink/80">
-              Click any part of the map to see what it does. Click a server to switch it off and on.
-            </p>
-          )}
-        </section>
-
-        <section aria-label="What is happening" className="min-h-[13rem] rounded-[22px] bg-ink p-5 text-white">
-          <ol aria-live="polite" className="space-y-1.5 font-mono text-[13px] leading-snug">
-            {visibleLog.length === 0 && <li className="text-white/60">Waiting for something to happen.</li>}
-            {visibleLog.map((l) => (
+      <section aria-label="What is happening" className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log]">
+        <div ref={logRef} className="absolute inset-0 overflow-y-auto p-5">
+          <ol aria-live="polite" className="space-y-2 text-[14px] leading-snug">
+            {s.log.length === 0 && <li className="text-white/60">Waiting for something to happen.</li>}
+            {s.log.map((l) => (
               <li key={l.id} className="flex gap-3">
-                <span className="shrink-0 tabular-nums text-white/45">{fmt(l.t)}</span>
-                <span className={`mt-[7px] size-2 shrink-0 rounded-full ${TONE[l.tone]}`} aria-hidden="true" />
+                <span className="shrink-0 pt-px text-[12px] tabular-nums text-white/45">{fmt(l.t)}</span>
+                <span className={`mt-[6px] size-2 shrink-0 rounded-full ${TONE[l.tone]}`} aria-hidden="true" />
                 <span>{l.text}</span>
               </li>
             ))}
           </ol>
-        </section>
-      </div>
-      <p className="mt-3 text-[13px] text-muted">
-        A model, not a blueprint: names, sizes and timings are simplified.
+        </div>
+      </section>
+
+      <p className="text-[14px] leading-snug text-muted [grid-area:hint]">
+        Click any part of the map to see what it does. Click a server to switch it off and on.
       </p>
+
+      <p className="text-[13px] text-muted [grid-area:note]">A model, not a blueprint: names, sizes and timings are simplified.</p>
     </div>
   );
 }
