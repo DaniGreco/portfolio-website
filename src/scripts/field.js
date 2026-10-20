@@ -1,7 +1,8 @@
 // Hero background: a field of triangles that fly into place on load,
 // then scatter around the pointer and fall back into the grid behind it.
 
-const COLORS = ['#2357d6', '#0e9f7e', '#e59a00', '#7a4ce0'].map((hex) => [
+// Shades of the palette blue, from deep to light.
+const COLORS = ['#1f3f99', '#2357d6', '#4a78e4', '#7b9ff0', '#a9c0f5'].map((hex) => [
   parseInt(hex.slice(1, 3), 16),
   parseInt(hex.slice(3, 5), 16),
   parseInt(hex.slice(5, 7), 16),
@@ -47,7 +48,7 @@ export function startField(canvas) {
         const rnd = hash(r, c);
         tris.push({
           cx, cy, up, side, h,
-          color: COLORS[Math.floor(rnd * 4) % 4],
+          color: COLORS[Math.floor(rnd * COLORS.length) % COLORS.length],
           spin: rnd > 0.5 ? 1 : -1,
           release: 150 + (cx / Math.max(W, 1)) * 700 + rnd * 250,
           dx: intro ? (rnd - 0.5) * 220 : 0,
@@ -78,7 +79,7 @@ export function startField(canvas) {
     ctx.closePath();
     if (t.glow > 0.01) {
       const [r, g, b] = t.color;
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${(0.06 + 0.52 * t.glow).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${(0.05 + 0.45 * t.glow).toFixed(3)})`;
     } else {
       ctx.fillStyle = `rgba(${INK}, 0.035)`;
     }

@@ -80,6 +80,215 @@
   }
 }
 
+/* Entrance animations. Without JavaScript (no .js class) everything is simply visible. */
+.js .reveal .w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.12em 0.03em 0.1em;
+  margin: -0.12em -0.03em -0.1em;
+}
+.js .reveal .w > span {
+  display: inline-block;
+  transform: translateY(115%) rotate(5deg);
+  transform-origin: 0 100%;
+}
+.js .reveal.in .w > span {
+  animation: word-in 0.55s cubic-bezier(0.22, 1.32, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 55ms + var(--delay, 0ms));
+}
+@keyframes word-in {
+  to {
+    transform: none;
+  }
+}
+
+.js .fade-up {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.js .fade-up.in {
+  animation: fade-up 0.6s ease-out forwards;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes fade-up {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hero: the site drawn as a transit line, one stop per section. */
+.stops {
+  --dot: 22px;
+  position: relative;
+}
+.stops-list {
+  display: grid;
+  gap: 1.1rem;
+}
+.stops-line {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--color-traffic);
+  top: calc(var(--dot) / 2);
+  bottom: calc(var(--dot) / 2);
+  left: calc(var(--dot) / 2 - 3px);
+  width: 6px;
+  transform-origin: center top;
+}
+.stop {
+  position: relative;
+  padding-left: calc(var(--dot) + 14px);
+  min-height: var(--dot);
+}
+.stop-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: #fff;
+  border: 5px solid var(--color-ink);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.stop-here .stop-dot {
+  background: var(--color-ink);
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+.stop-name {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: var(--dot);
+}
+.stop-text {
+  display: block;
+  margin-top: 2px;
+  max-width: 32ch;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+.stop-link:hover .stop-dot,
+.stop-link:focus-visible .stop-dot {
+  background: var(--color-traffic);
+  border-color: var(--color-traffic);
+}
+.stop-link:hover .stop-name {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.stops-train {
+  display: none;
+}
+@media (min-width: 640px) {
+  .stops-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  .stops-line {
+    top: calc(var(--dot) / 2 - 3px);
+    bottom: auto;
+    left: calc(var(--dot) / 2);
+    right: calc(25% - var(--dot) / 2);
+    width: auto;
+    height: 6px;
+    transform-origin: left center;
+  }
+  .stop {
+    padding-left: 0;
+    padding-top: calc(var(--dot) + 14px);
+    padding-right: 1.5rem;
+  }
+  .stops-train {
+    display: block;
+    position: absolute;
+    top: calc(var(--dot) / 2 - 7px);
+    left: calc(var(--dot) / 2 - 7px);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-traffic);
+    box-shadow: 0 0 0 3px #fff;
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.js .stops .stops-line {
+  transform: scaleY(0);
+}
+.js .stops .stop,
+.js .stops .stops-train {
+  opacity: 0;
+}
+.js .stops.in .stops-line {
+  animation: line-in 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.75s forwards;
+}
+.js .stops.in .stop {
+  animation: fade-up 0.45s ease-out forwards;
+  animation-delay: calc(0.85s + var(--n) * 0.13s);
+  transform: translateY(8px);
+}
+.js .stops.in .stops-train {
+  animation:
+    train-arrive 0.3s ease-out 1.45s forwards,
+    train-go 0.9s cubic-bezier(0.65, 0, 0.35, 1) 1.75s forwards,
+    train-wait 1.6s ease-out 2.65s 3;
+}
+@keyframes line-in {
+  to {
+    transform: none;
+  }
+}
+@keyframes train-arrive {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes train-go {
+  from {
+    opacity: 1;
+    left: calc(var(--dot) / 2 - 7px);
+  }
+  to {
+    opacity: 1;
+    left: calc(25% + var(--dot) / 2 - 7px);
+  }
+}
+@keyframes train-wait {
+  0% {
+    box-shadow: 0 0 0 3px #fff, 0 0 0 3px rgb(35 87 214 / 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 3px #fff, 0 0 0 16px rgb(35 87 214 / 0);
+  }
+}
+@media (min-width: 640px) {
+  .js .stops .stops-line {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal .w > span,
+  .js .fade-up,
+  .js .stops .stops-line,
+  .js .stops .stop {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .js .stops .stops-train {
+    animation: none !important;
+    opacity: 1 !important;
+    left: calc(25% + var(--dot) / 2 - 7px);
+  }
+}
+
 /* Map: SVG groups draw their own focus ring. */
 .hit:focus {
   outline: none;

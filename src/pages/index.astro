@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Playground from '../components/Playground/Playground.jsx';
+import Reveal from '../components/Reveal.astro';
 
 const year = new Date().getFullYear();
 
@@ -56,6 +57,13 @@ const studies = [
   },
 ];
 
+// The hero line: one stop per section, in scroll order.
+const stops = [
+  { href: '#demo', name: 'Demo', text: 'Send a request through my infrastructure, switch a server off, ship a release.' },
+  { href: '#experience', name: 'Experience and studies', text: 'Software architect at flAi, PhD student at the University of Bergamo.' },
+  { href: '#contact', name: 'Contact', text: 'info@danielegreco.com' },
+];
+
 // Experience and Studies share one screen, so both links point to it and light up together.
 const nav = [
   { href: '#demo', label: 'Demo', section: 'demo' },
@@ -85,18 +93,44 @@ const nav = [
   </header>
 
   <main>
-    <section id="top" class="snap relative flex flex-col justify-center overflow-hidden">
+    <section id="top" class="snap relative flex flex-col overflow-hidden">
       <canvas id="field" class="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true"></canvas>
-      <div class="relative mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-16 md:px-6 lg:grid-cols-12 lg:items-end">
-        <h1 class="wide-type text-[clamp(2.2rem,4.1vw,3.9rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8">
-          Powering <span class="whitespace-nowrap">mission-critical</span> infrastructure for aviation and modern industry.
-        </h1>
-        <p class="max-w-[44ch] text-[18px] leading-relaxed text-ink/80 lg:col-span-4 lg:pb-2">
-          PhD student with several years of experience as a system architect and software engineer, based in Bergamo,
-          Italy. I build and manage all kinds of clusters, from on-premise server rooms to cloud-native environments,
-          following the highest security standards.
-        </p>
+      <div class="relative mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-14 pb-10 md:px-6">
+        <div class="grid gap-8 lg:grid-cols-12 lg:items-end">
+          <Reveal
+            as="h1"
+            text="Powering mission-critical infrastructure for aviation and modern industry."
+            class="hero-in wide-type text-[clamp(2.2rem,4.1vw,3.9rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8"
+          />
+          <p class="hero-in fade-up max-w-[44ch] text-[18px] leading-relaxed text-ink/80 lg:col-span-4 lg:pb-2" style="--delay: 450ms">
+            PhD student with several years of experience as a system architect and software engineer, based in Bergamo,
+            Italy. I build and manage all kinds of clusters, from on-premise server rooms to cloud-native environments,
+            following the highest security standards.
+          </p>
+        </div>
       </div>
+      <nav aria-label="Jump to a section" class="relative mx-auto w-full max-w-[1400px] px-4 pb-8 md:px-6 md:pb-12">
+        <div class="hero-in stops">
+          <span class="stops-line" aria-hidden="true"></span>
+          <span class="stops-train" aria-hidden="true"></span>
+          <ol class="stops-list">
+          <li class="stop stop-here" style="--n: 0">
+            <span class="stop-dot" aria-hidden="true"></span>
+            <span class="stop-name">You are here</span>
+            <span class="stop-text">Scroll down, or jump to a stop.</span>
+          </li>
+          {stops.map((stop, i) => (
+            <li class="stop" style={`--n: ${i + 1}`}>
+              <a href={stop.href} class="stop-link block">
+                <span class="stop-dot" aria-hidden="true"></span>
+                <span class="stop-name">{stop.name}</span>
+                <span class="stop-text">{stop.text}</span>
+              </a>
+            </li>
+          ))}
+          </ol>
+        </div>
+      </nav>
     </section>
 
     <section id="demo" aria-label="Infrastructure demo" class="snap flex flex-col justify-center">
@@ -108,7 +142,7 @@ const nav = [
     <section id="experience" class="snap flex flex-col justify-center">
       <div class="mx-auto grid w-full max-w-[1400px] gap-x-14 gap-y-14 px-4 py-4 md:px-6 lg:grid-cols-12 [@media(min-height:860px)]:py-12">
         <div class="lg:col-span-7">
-          <h2 class="wide-type text-[clamp(1.9rem,3.2vw,2.8rem)] leading-none font-extrabold tracking-tight">Experience</h2>
+          <Reveal text="Experience" class="section-in wide-type text-[clamp(1.9rem,3.2vw,2.8rem)] leading-none font-extrabold tracking-tight" />
           <ol class="mt-4 divide-y divide-ink/10 border-t border-ink/10 [@media(min-height:860px)]:mt-6">
             {experience.map((w) => (
               <li class="py-3 [@media(min-height:860px)]:py-5">
@@ -129,7 +163,7 @@ const nav = [
         </div>
 
         <div id="studies" class="scroll-mt-6 lg:col-span-5">
-          <h2 class="wide-type text-[clamp(1.9rem,3.2vw,2.8rem)] leading-none font-extrabold tracking-tight">Studies</h2>
+          <Reveal text="Studies" delay={120} class="section-in wide-type text-[clamp(1.9rem,3.2vw,2.8rem)] leading-none font-extrabold tracking-tight" />
           <ol class="mt-4 divide-y divide-ink/10 border-t border-ink/10 [@media(min-height:860px)]:mt-6">
             {studies.map((s) => (
               <li class="py-3 [@media(min-height:860px)]:py-5">
@@ -152,7 +186,7 @@ const nav = [
       <div class="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 py-10 md:px-6">
         <div class="grid gap-10 rounded-[26px] bg-ink px-6 py-12 text-white md:px-12 md:py-16 lg:grid-cols-12 lg:items-center">
           <div class="lg:col-span-8">
-            <h2 class="wide-type text-[clamp(2rem,4vw,3.4rem)] leading-none font-extrabold tracking-tight">Contact</h2>
+            <Reveal text="Contact" class="section-in wide-type text-[clamp(2rem,4vw,3.4rem)] leading-none font-extrabold tracking-tight" />
             <p class="mt-4 max-w-[52ch] text-[18px] leading-relaxed text-white/80">Email is the fastest way to reach me.</p>
             <a
               href="mailto:info@danielegreco.com"
@@ -198,6 +232,22 @@ const nav = [
 
   const canvas = document.getElementById('field');
   if (canvas instanceof HTMLCanvasElement) startField(canvas);
+
+  // Entrances: the hero plays on load, section titles when their screen comes into view.
+  requestAnimationFrame(() => {
+    for (const el of document.querySelectorAll('.hero-in')) el.classList.add('in');
+  });
+  const reveal = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('in');
+        reveal.unobserve(entry.target);
+      }
+    },
+    { threshold: 0.6 },
+  );
+  for (const el of document.querySelectorAll('.section-in')) reveal.observe(el);
 
   // Top bar: a hairline once the page scrolls, and the current section underlined.
   const bar = document.getElementById('top-bar');
