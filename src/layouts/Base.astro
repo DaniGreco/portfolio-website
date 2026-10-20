@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { LANGS } from '../i18n/home.js';
+import { INLINE_SCRIPTS } from '../scripts/inline.js';
 
 interface Props {
   title: string;
@@ -19,8 +20,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Entrance animations hide their elements only when JavaScript can reveal them again. -->
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline set:html={INLINE_SCRIPTS.markJs} />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
