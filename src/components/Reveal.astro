@@ -1,0 +1,20 @@
+---
+// A heading whose words slide up one after the other when it gets the "in" class.
+interface Props {
+  text: string;
+  as?: 'h1' | 'h2';
+  class?: string;
+  delay?: number;
+}
+
+const { text, as: Tag = 'h2', class: className, delay = 0 } = Astro.props;
+const words = text.split(' ');
+---
+
+<Tag class:list={['reveal', className]} aria-label={text} style={`--delay: ${delay}ms`}>
+  {words.map((word, i) => (
+    <>
+      <span class="w" aria-hidden="true"><span style={`--i: ${i}`}>{word}</span></span>{i < words.length - 1 && ' '}
+    </>
+  ))}
+</Tag>
