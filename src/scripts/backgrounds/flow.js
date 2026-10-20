@@ -2,7 +2,9 @@
 // Each particle remembers a point every few pixels it travels (not every frame), so a long
 // tail costs few segments, and the tail fades to nothing. The canvas is cleared every frame,
 // so trails always disappear instead of piling up.
-// The pointer pulls the current towards it and turns it into a vortex.
+// The pointer is a black hole: its pull grows with closeness like gravity, strands spiral
+// in and are swallowed at the centre, and once it moves on they drift back to the current.
+// Each strand has its own velocity and only steers towards the current, so nothing snaps.
 import { makeNoise } from './noise.js';
 import { runCanvas } from './loop.js';
 
@@ -12,13 +14,20 @@ const STEP = 4; // px travelled between two remembered points
 const BANDS = 5; // the tail is drawn in bands, fainter towards its end
 const BAND = TAIL / BANDS;
 const RGB = ['35, 87, 214', '74, 120, 228', '31, 63, 153'];
-const GRAVITY = 320; // how far, in px, the pointer bends the current
-const SPEED = 1.5;
+const SPEED = 1.5; // px per frame along the current
+const STEER = 0.08; // how quickly a strand turns towards the current
+const HOLE = 4000; // pull of the pointer: HOLE / (distance² + SOFT²), in px per frame²
+const SOFT = 60; // px: softens the pull near the centre
+const SPIN = 0.6; // sideways share of the pull, so strands spiral instead of falling straight
+const HORIZON = 10; // px: strands closer than this are swallowed
+const MAX_SPEED = 6;
 
 export function start(canvas) {
   let count = 0;
   let px = new Float32Array(0); // current position
   let py = new Float32Array(0);
+  let vx = new Float32Array(0); // current velocity
+  let vy = new Float32Array(0);
   let xs = new Float32Array(0); // remembered points, ring buffers of TAIL per particle
   let ys = new Float32Array(0);
   let head = new Uint16Array(0); // newest remembered point
@@ -32,6 +41,8 @@ export function start(canvas) {
     const y = Math.random() * H;
     px[i] = x;
     py[i] = y;
+    vx[i] = 0;
+    vy[i] = 0;
     xs[i * TAIL] = x;
     ys[i * TAIL] = y;
     head[i] = 0;
@@ -48,23 +59,34 @@ export function start(canvas) {
       const x = px[i];
       const y = py[i];
       const angle = noise(x * f, y * f, t * 0.04) * Math.PI * 2;
-      let vx = Math.cos(angle) * SPEED;
-      let vy = Math.sin(angle) * SPEED;
+      // Steer towards the current instead of jumping onto it.
+      let ax = (Math.cos(angle) * SPEED - vx[i]) * STEER;
+      let ay = (Math.sin(angle) * SPEED - vy[i]) * STEER;
       let k = 0;
       if (near) {
-        const dx = x - pointer.x;
-        const dy = y - pointer.y;
-        const d = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (d < GRAVITY) {
-          k = (1 - d / GRAVITY) ** 1.6 * pointer.active;
-          // Around the pointer: swirl (perpendicular) plus a pull towards it.
-          vx += (-dy / d) * k * 2.4 - (dx / d) * k * 1.3;
-          vy += (dx / d) * k * 2.4 - (dy / d) * k * 1.3;
+        const dx = pointer.x - x;
+        const dy = pointer.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < HORIZON * HORIZON && pointer.active > 0.5) {
+          spawn(i, W, H);
+          continue;
         }
+        const d = Math.sqrt(d2) || 1;
+        const g = (HOLE * pointer.active) / (d2 + SOFT * SOFT);
+        ax += (dx / d) * g - (dy / d) * g * SPIN;
+        ay += (dy / d) * g + (dx / d) * g * SPIN;
+        k = Math.min(1, g / 0.25);
+      }
+      vx[i] += ax;
+      vy[i] += ay;
+      const speed = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]);
+      if (speed > MAX_SPEED) {
+        vx[i] *= MAX_SPEED / speed;
+        vy[i] *= MAX_SPEED / speed;
       }
       pull[i] += (k - pull[i]) * 0.15;
-      const nx = x + vx;
-      const ny = y + vy;
+      const nx = x + vx[i];
+      const ny = y + vy[i];
       age[i] += 1;
       if (nx < -20 || ny < -20 || nx > W + 20 || ny > H + 20 || age[i] > life[i]) {
         spawn(i, W, H);
@@ -140,6 +162,8 @@ export function start(canvas) {
       age = new Float32Array(count);
       life = new Float32Array(count);
       pull = new Float32Array(count);
+      vx = new Float32Array(count);
+      vy = new Float32Array(count);
       for (let i = 0; i < count; i++) spawn(i, W, H);
       // Start with tails already grown, so the first frames are not a field of dots.
       for (let n = 0; n < TAIL * 3; n++) advance(0, W, H, null);
