@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "@fontsource-variable/overpass";
+@import "@fontsource-variable/overpass-mono";
+
+@theme {
+  --font-sans: "Overpass Variable", system-ui, sans-serif;
+  --font-mono: "Overpass Mono Variable", ui-monospace, monospace;
+
+  --color-paper: #f4f6f8;
+  --color-ink: #14182e;
+  --color-muted: #545a70;
+  --color-traffic: #2357d6;
+  --color-mesh: #0e9f7e;
+  --color-data: #e59a00;
+  --color-gpu: #7a4ce0;
+  --color-alarm: #e23d28;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-traffic);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* Map: SVG groups draw their own focus ring. */
+.hit:focus {
+  outline: none;
+}
+.focus-ring {
+  fill: none;
+  stroke: var(--color-traffic);
+  stroke-width: 2.5;
+  opacity: 0;
+  pointer-events: none;
+}
+.hit:focus-visible .focus-ring {
+  opacity: 1;
+}
+
+.creating {
+  animation: creating 1.1s ease-in-out infinite;
+}
+@keyframes creating {
+  50% {
+    stroke-opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .creating {
+    animation: none;
+  }
+}

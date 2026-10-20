@@ -1,17 +1,152 @@
 ---
+import Base from '../layouts/Base.astro';
+import Playground from '../components/Playground/Playground.jsx';
 
+const year = new Date().getFullYear();
+
+const work = [
+  {
+    years: '2026 – now',
+    role: 'Software and infrastructure engineer',
+    org: 'flAi',
+    href: 'https://flai-analytics.com',
+    text: 'flAi builds decision-support tools for aviation and mobility. I run the platform underneath: GPU servers on-prem, cloud fleets, single sign-on, backups and monitoring. On top of it I build products: a document assistant for operations staff, AI agents and analytics dashboards.',
+  },
+  {
+    years: '2023 – 2024',
+    role: 'CPM software engineer',
+    org: 'Avvale',
+    href: 'https://www.avvale.com',
+    text: 'Modules for OneStream, a corporate performance management platform, written in Visual Basic and .NET.',
+  },
+];
+
+const studies = [
+  {
+    years: '2023 – now',
+    role: 'MSc in Computer Science and Engineering',
+    org: 'University of Bergamo',
+  },
+  {
+    years: '2019 – 2022',
+    role: 'BSc in Computer Science and Engineering',
+    org: 'University of Bergamo',
+    text: 'Thesis with Prof. Paolo Malighetti: a web scraper in JavaScript, Node.js and Docker that collects e-bike components from Italian shops.',
+    link: { href: 'https://github.com/DaniGreco/BSc_Thesis', label: 'Thesis code on GitHub' },
+  },
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+  title="Daniele Greco, software and infrastructure engineer"
+  description="I build and run the infrastructure behind AI products: GPU servers on-prem, cloud fleets and the network between them. Explore a working model of it."
+>
+  <header class="mx-auto flex max-w-[1240px] items-center justify-between px-4 pt-5 md:px-6">
+    <a href="/" class="text-[17px] font-extrabold tracking-tight">Daniele Greco</a>
+    <nav aria-label="Sections" class="flex gap-5 text-[15px] font-semibold text-ink/75">
+      <a href="#map" class="hover:text-ink">Map</a>
+      <a href="#work" class="hover:text-ink">Work</a>
+      <a href="#contact" class="hover:text-ink">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="mx-auto grid max-w-[1240px] gap-6 px-4 pt-14 pb-10 md:grid-cols-12 md:items-end md:px-6 md:pt-20">
+      <h1 class="text-[clamp(2.5rem,6.2vw,4.75rem)] leading-[0.98] font-extrabold tracking-[-0.025em] md:col-span-7">
+        I build and run the machines behind AI products.
+      </h1>
+      <div class="space-y-3 text-[18px] leading-relaxed text-ink/80 md:col-span-5 md:pb-2">
+        <p>
+          Software and infrastructure engineer in Bergamo, Italy. I look after GPU servers in a customer's server room, two
+          fleets of cloud servers and the network that ties them together.
+        </p>
+        <p>The map below is a working model of that setup. Send a request through it, switch a server off, ship a release.</p>
+      </div>
+    </section>
+
+    <section id="map" aria-label="Infrastructure map" class="mx-auto max-w-[1240px] scroll-mt-6 px-4 md:px-6">
+      <Playground client:load />
+    </section>
+
+    <section id="work" class="mx-auto mt-24 max-w-[1240px] scroll-mt-6 px-4 md:mt-32 md:px-6">
+      <div class="grid gap-x-10 gap-y-12 md:grid-cols-12">
+        <div class="md:col-span-7">
+          <h2 class="text-[28px] font-extrabold tracking-tight">Work</h2>
+          <ol class="mt-6 divide-y divide-ink/10 border-t border-ink/10">
+            {work.map((w) => (
+              <li class="grid gap-1 py-6 sm:grid-cols-[9rem_1fr] sm:gap-6">
+                <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{w.years}</span>
+                <div>
+                  <h3 class="text-[19px] leading-snug font-bold">
+                    {w.role},{' '}
+                    <a href={w.href} class="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">{w.org}</a>
+                  </h3>
+                  <p class="mt-2 max-w-[62ch] text-[16px] leading-relaxed text-ink/80">{w.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <h2 class="mt-16 text-[28px] font-extrabold tracking-tight">Studies</h2>
+          <ol class="mt-6 divide-y divide-ink/10 border-t border-ink/10">
+            {studies.map((s) => (
+              <li class="grid gap-1 py-6 sm:grid-cols-[9rem_1fr] sm:gap-6">
+                <span class="pt-0.5 text-[15px] font-semibold text-muted tabular-nums">{s.years}</span>
+                <div>
+                  <h3 class="text-[19px] leading-snug font-bold">{s.role}, {s.org}</h3>
+                  {s.text && <p class="mt-2 max-w-[62ch] text-[16px] leading-relaxed text-ink/80">{s.text}</p>}
+                  {s.link && (
+                    <a href={s.link.href} class="mt-2 inline-block text-[16px] font-semibold text-traffic underline decoration-traffic/30 underline-offset-4 hover:decoration-traffic">
+                      {s.link.label}
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <aside class="md:col-span-4 md:col-start-9">
+          <img
+            src="/images/daniele-480.webp"
+            srcset="/images/daniele-480.webp 480w, /images/daniele-960.webp 960w"
+            sizes="(min-width: 768px) 320px, 80vw"
+            width="480"
+            height="480"
+            alt="Daniele Greco"
+            loading="lazy"
+            class="aspect-square w-full max-w-[360px] rounded-[22px] bg-white object-cover"
+          />
+          <p class="mt-6 max-w-[42ch] text-[16px] leading-relaxed text-ink/80">
+            Curiosity drives most of what I do. Besides technology and engineering I read about maths, finance, music, cinema
+            and philosophy, and I like taking ideas from one field into another.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="contact" class="mx-auto mt-24 max-w-[1240px] scroll-mt-6 px-4 md:mt-32 md:px-6">
+      <div class="rounded-[22px] bg-ink px-6 py-12 text-white md:px-12 md:py-16">
+        <h2 class="text-[28px] font-extrabold tracking-tight">Get in touch</h2>
+        <p class="mt-3 max-w-[52ch] text-[18px] leading-relaxed text-white/80">Email is the fastest way to reach me.</p>
+        <a
+          href="mailto:info@danielegreco.com"
+          class="mt-6 inline-block text-[clamp(1.6rem,5vw,3rem)] leading-tight font-extrabold tracking-tight break-all underline decoration-white/30 underline-offset-[6px] hover:decoration-white"
+        >
+          info@danielegreco.com
+        </a>
+        <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[16px] font-semibold">
+          <li><a href="/linkedin" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">LinkedIn</a></li>
+          <li><a href="/github" class="underline decoration-white/30 underline-offset-4 hover:decoration-white">GitHub</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 px-4 py-10 text-[14px] text-muted md:px-6">
+    <span>© {year} Daniele Greco</span>
+    <a href="https://github.com/DaniGreco/portfolio-website" class="underline decoration-ink/20 underline-offset-4 hover:text-ink">
+      Source code on GitHub
+    </a>
+  </footer>
+</Base>
