@@ -9,6 +9,8 @@ export const WIDE = {
   width: 1200,
   height: 780,
   subtitles: true,
+  // Font sizes in map units. The tall map is drawn smaller on a phone, so its text is larger.
+  text: { zone: 15, note: 12, station: 12, tile: 11, off: 15, plus: 20, slot: 10, gpu: 10, pod: 11, podSmall: 10, tag: 9 },
   zones: {
     edge: { x: 120, y: 40, w: 220, h: 380 },
     site: { x: 24, y: 510, w: 316, h: 246 },
@@ -72,6 +74,7 @@ export const TALL = {
   width: 440,
   height: 1256,
   subtitles: false,
+  text: { zone: 17, note: 12, station: 14, tile: 13, off: 17, plus: 22, slot: 11, gpu: 12, pod: 13.5, podSmall: 11, tag: 11 },
   zones: {
     edge: { x: 70, y: 40, w: 342, h: 100 },
     paas: { x: 16, y: 160, w: 396, h: 250 },

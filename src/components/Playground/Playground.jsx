@@ -136,7 +136,7 @@ function Packet({ L, packet, boxes, reduce }) {
   );
 }
 
-function Pod({ T, pod, box, reduce, selected, onSelect }) {
+function Pod({ T, fs, pod, box, reduce, selected, onSelect }) {
   const svc = SERVICES[pod.svc];
   const kind = KIND[svc.kind];
   const solid = Boolean(svc.gpu);
@@ -149,6 +149,7 @@ function Pod({ T, pod, box, reduce, selected, onSelect }) {
   if (pod.status === 'pending') text = 'fill-muted';
   const tag = pod.zone === 'k8s' ? (pod.svc === 'sql' ? (pod.role === 'primary' ? 'P' : 'R') : `v${pod.ver}`) : null;
   const anim = { x: box.x, y: box.y, opacity: pod.status === 'stop' ? 0 : 1 };
+  const size = box.w < 44 ? fs.podSmall : fs.pod;
   return (
     <motion.g
       initial={pod.seq > INITIAL_SEQ ? { ...anim, opacity: 0 } : false}
@@ -169,15 +170,15 @@ function Pod({ T, pod, box, reduce, selected, onSelect }) {
       />
       <text
         x={tag ? 7 : box.w / 2}
-        y={box.h / 2 + 4}
+        y={box.h / 2 + size * 0.36}
         textAnchor={tag ? 'start' : 'middle'}
-        className={`${text} ${box.w < 44 ? 'text-[10px]' : 'text-[11px]'} font-bold`}
-        style={down ? { textDecoration: 'line-through' } : undefined}
+        className={`${text} font-bold`}
+        style={{ fontSize: size, textDecoration: down ? 'line-through' : undefined }}
       >
         {svc.label}
       </text>
       {tag && (
-        <text x={box.w - 6} y={box.h / 2 + 3.5} textAnchor="end" className={`${text} text-[9px] font-semibold`}>
+        <text x={box.w - 6} y={box.h / 2 + fs.tag * 0.39} textAnchor="end" className={`${text} font-semibold`} style={{ fontSize: fs.tag }}>
           {tag}
         </text>
       )}
@@ -186,7 +187,7 @@ function Pod({ T, pod, box, reduce, selected, onSelect }) {
   );
 }
 
-function Tile({ T, id, t, s, selected, onSelect }) {
+function Tile({ T, fs, id, t, s, selected, onSelect }) {
   const node = NODES[id];
   const status = s.nodes[id];
   const sel = selected?.type === 'node' && selected.id === id;
@@ -201,10 +202,10 @@ function Tile({ T, id, t, s, selected, onSelect }) {
           strokeWidth={sel ? 2.5 : 1.5}
           strokeDasharray="5 4"
         />
-        <text x={t.x + t.w / 2} y={t.y + t.h / 2 - 2} textAnchor="middle" className="fill-muted text-[20px] font-light">
+        <text x={t.x + t.w / 2} y={t.y + t.h / 2 - 2} textAnchor="middle" className="fill-muted font-light" style={{ fontSize: fs.plus }}>
           {creating ? '' : '+'}
         </text>
-        <text x={t.x + t.w / 2} y={t.y + t.h / 2 + 16} textAnchor="middle" className="fill-muted text-[10px] font-semibold">
+        <text x={t.x + t.w / 2} y={t.y + t.h / 2 + 16} textAnchor="middle" className="fill-muted font-semibold" style={{ fontSize: fs.slot }}>
           {creating ? T.ui.creating : T.ui.freeSlot}
         </text>
         <rect className="focus-ring" x={t.x - 3} y={t.y - 3} width={t.w + 6} height={t.h + 6} rx={13} />
@@ -220,12 +221,12 @@ function Tile({ T, id, t, s, selected, onSelect }) {
         className={up ? `fill-white ${sel ? 'stroke-traffic' : 'stroke-ink/15'}` : 'fill-alarm/[0.07] stroke-alarm'}
         strokeWidth={sel ? 2.5 : 1.25}
       />
-      <text x={t.x + 9} y={small ? t.y + t.h / 2 + 4 : t.y + 18} className={`${up ? 'fill-ink' : 'fill-alarm'} text-[11px] font-bold`}>
+      <text x={t.x + 9} y={(small ? t.y + t.h / 2 : t.y + 14) + fs.tile * 0.36} className={`${up ? 'fill-ink' : 'fill-alarm'} font-bold`} style={{ fontSize: fs.tile }}>
         {T.nodes[id]}
       </text>
       {t.w >= 76 && <circle cx={t.x + t.w - 11} cy={small ? t.y + t.h / 2 : t.y + 14} r={4} className={up ? 'fill-mesh' : 'fill-alarm'} />}
       {!up && !small && (
-        <text x={t.x + t.w / 2} y={t.y + t.h / 2 + 6} textAnchor="middle" className="fill-alarm text-[15px] font-extrabold">
+        <text x={t.x + t.w / 2} y={t.y + t.h / 2 + fs.off * 0.4} textAnchor="middle" className="fill-alarm font-extrabold" style={{ fontSize: fs.off }}>
           {T.ui.off}
         </text>
       )}
@@ -239,8 +240,9 @@ function GpuRows({ L, t }) {
     <g key={g} aria-hidden="true">
       <text
         x={t.x + (L.gpu.labelAbove ? L.gpu.left : 10)}
-        y={L.gpu.labelAbove ? t.y + top - 4 : t.y + top + L.gpu.cellH / 2 + 4}
-        className="fill-muted text-[10px] font-semibold"
+        y={L.gpu.labelAbove ? t.y + top - 4 : t.y + top + L.gpu.cellH / 2 + L.text.gpu * 0.4}
+        className="fill-muted font-semibold"
+        style={{ fontSize: L.text.gpu }}
       >
         GPU {g + 1}
       </text>
@@ -267,10 +269,10 @@ function MapSvg({ T, L, s, reduce, selected, onSelect }) {
       {Object.entries(L.zones).map(([id, z]) => (
         <g key={id} className="hit cursor-pointer" aria-label={T.zones[id].name} {...press(() => onSelect({ type: 'zone', id }))}>
           <rect x={z.x} y={z.y} width={z.w} height={z.h} rx={18} className={ZONE_FILL[id]} strokeWidth={zoneSel(id) ? 2.5 : 1} />
-          <text x={z.x + 16} y={z.y + 26} className="fill-ink text-[15px] font-extrabold">
+          <text x={z.x + 16} y={z.y + 15 + L.text.zone * 0.72} className="fill-ink font-extrabold" style={{ fontSize: L.text.zone }}>
             {T.zones[id].name}
             {L.subtitles && T.zones[id].note && (
-              <tspan dx={10} className="fill-muted text-[12px] font-medium">{T.zones[id].note}</tspan>
+              <tspan dx={10} className="fill-muted font-medium" style={{ fontSize: L.text.note }}>{T.zones[id].note}</tspan>
             )}
           </text>
           <rect className="focus-ring" x={z.x - 3} y={z.y - 3} width={z.w + 6} height={z.h + 6} rx={21} />
@@ -305,7 +307,7 @@ function MapSvg({ T, L, s, reduce, selected, onSelect }) {
         return (
           <g key={id} className="hit cursor-pointer" aria-label={T.stations[id].name} {...press(() => onSelect({ type: 'station', id }))}>
             <circle cx={x} cy={y} r={st.big ? 10 : 7} className={st.big ? 'fill-ink stroke-white' : `fill-white ${sel ? 'stroke-traffic' : 'stroke-ink'}`} strokeWidth={st.big ? 3 : 3} />
-            <text x={lx} y={ly} textAnchor={anchor} className="fill-ink text-[12px] font-semibold">
+            <text x={lx} y={ly} textAnchor={anchor} className="fill-ink font-semibold" style={{ fontSize: L.text.station }}>
               {T.stations[id].name}
             </text>
             <circle className="focus-ring" cx={x} cy={y} r={14} />
@@ -315,7 +317,7 @@ function MapSvg({ T, L, s, reduce, selected, onSelect }) {
 
       {Object.entries(L.tiles).map(([id, t]) => (
         <g key={id}>
-          <Tile T={T} id={id} t={t} s={s} selected={selected} onSelect={onSelect} />
+          <Tile T={T} fs={L.text} id={id} t={t} s={s} selected={selected} onSelect={onSelect} />
           {NODES[id].zone === 'onprem' && <GpuRows L={L} t={t} />}
         </g>
       ))}
@@ -325,7 +327,7 @@ function MapSvg({ T, L, s, reduce, selected, onSelect }) {
           const box = boxes.get(p.id);
           if (!box) return null;
           return (
-            <Pod key={p.id} T={T} pod={p} box={box} reduce={reduce} selected={selected?.type === 'pod' && selected.id === p.id} onSelect={onSelect} />
+            <Pod key={p.id} T={T} fs={L.text} pod={p} box={box} reduce={reduce} selected={selected?.type === 'pod' && selected.id === p.id} onSelect={onSelect} />
           );
         })}
       </AnimatePresence>
@@ -373,7 +375,7 @@ function DetailCard({ T, L, a, info, onClose, actions, addDisabled }) {
       aria-live="polite"
       aria-label={info.title}
       style={style}
-      className="absolute z-10 w-[300px] max-w-[calc(100%-16px)] rounded-[18px] border border-ink/10 bg-white p-4 shadow-[0_18px_40px_-18px_rgba(20,24,46,0.45)]"
+      className="absolute z-20 w-[300px] max-w-[calc(100%-16px)] rounded-[18px] border border-ink/10 bg-white p-4 shadow-[0_18px_40px_-18px_rgba(20,24,46,0.45)]"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[17px] leading-tight font-extrabold">{info.title}</h3>
@@ -985,7 +987,7 @@ export default function Playground({ lang = 'en' }) {
         clearTimeout(first);
         first = setTimeout(() => autoRef.current(), 800);
       }
-    }, { threshold: 0.5 });
+    }, { rootMargin: '-40% 0px -40% 0px' });
     io.observe(el);
     return () => {
       io.disconnect();
@@ -1076,27 +1078,30 @@ export default function Playground({ lang = 'en' }) {
         </Action>
       </div>
 
-      <div className="min-w-0 [grid-area:map]">
-        <div className="overflow-visible rounded-[22px] border border-ink/10 bg-white">
-          <div className="hidden md:block">{box(WIDE)}</div>
-          <div className="md:hidden">{box(TALL)}</div>
+      {/* On phones the log stays pinned at the bottom of the screen while the map scrolls by. */}
+      <div className="map-log">
+        <div className="min-w-0 [grid-area:map]">
+          <div className="overflow-visible rounded-[22px] border border-ink/10 bg-white">
+            <div className="hidden md:block">{box(WIDE)}</div>
+            <div className="md:hidden">{box(TALL)}</div>
+          </div>
         </div>
-      </div>
 
-      <section aria-label={T.ui.logLabel} className="relative min-h-[14rem] rounded-[22px] bg-ink text-white [grid-area:log] lg:min-h-[8rem]">
-        <div ref={logRef} className="absolute inset-0 overflow-y-auto p-5">
-          <ol aria-live={autoplay ? 'off' : 'polite'} className="space-y-2 text-[14px] leading-snug">
-            {s.log.length === 0 && <li className="text-white/60">{T.ui.waiting}</li>}
-            {s.log.map((l) => (
-              <li key={l.id} className="flex gap-3">
-                <span className="shrink-0 pt-px text-[12px] tabular-nums text-white/45">{fmt(l.t)}</span>
-                <span className={`mt-[6px] size-2 shrink-0 rounded-full ${TONE[l.tone]}`} aria-hidden="true" />
-                <span>{l.text}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+        <section aria-label={T.ui.logLabel} className="sticky bottom-3 z-10 h-[8.5rem] rounded-[22px] bg-ink text-white shadow-[0_14px_36px_-12px_rgba(20,24,46,0.55)] [grid-area:log] lg:relative lg:bottom-auto lg:h-auto lg:min-h-[8rem] lg:shadow-none">
+          <div ref={logRef} className="absolute inset-0 overflow-y-auto p-4 lg:p-5">
+            <ol aria-live={autoplay ? 'off' : 'polite'} className="space-y-2 text-[14px] leading-snug">
+              {s.log.length === 0 && <li className="text-white/60">{T.ui.waiting}</li>}
+              {s.log.map((l) => (
+                <li key={l.id} className="flex gap-3">
+                  <span className="shrink-0 pt-px text-[12px] tabular-nums text-white/45">{fmt(l.t)}</span>
+                  <span className={`mt-[6px] size-2 shrink-0 rounded-full ${TONE[l.tone]}`} aria-hidden="true" />
+                  <span>{l.text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      </div>
 
       <p className="glass glass-blue px-4 py-3 text-[14px] leading-snug text-ink/80 [grid-area:hint]">
         {T.ui.hint}
