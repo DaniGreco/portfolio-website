@@ -1,21 +1,41 @@
 ---
 import Base from '../layouts/Base.astro';
+import { LANGS } from '../i18n/home.js';
 import { INLINE_SCRIPTS } from '../scripts/inline.js';
 
-// One 404 page serves every missing address: addresses under /it/ get the Italian text
-// (the switch is in src/scripts/inline.js).
+// One 404 page serves every missing address: addresses under /it/ get the Italian text, and the
+// language switch changes it in place (both in src/scripts/inline.js).
 const text = {
-  en: { title: 'This page is not on the map.', body: 'The address may be old, or mistyped.', home: 'Go to the home page', href: '/' },
-  it: { title: 'Questa pagina non è sulla mappa.', body: "L'indirizzo potrebbe essere vecchio, o scritto male.", home: 'Vai alla home page', href: '/it/' },
+  en: { title: 'You have strayed from the path', body: '404 address not found', home: 'Get back on the path', href: '/' },
+  it: { title: 'La diritta via hai smarrito', body: '404 address not found', home: 'Torna sulla retta via', href: '/it/' },
 };
 ---
 
 <Base title="Page not found, Daniele Greco" description="This page does not exist." alternates={false}>
+  <!-- Same place and look as the language switch on the home page. It only works with JavaScript, so it starts hidden. -->
+  <header class="absolute inset-x-0 top-0 h-(--header)">
+    <div class="mx-auto flex h-full max-w-[1400px] items-center justify-end px-4 md:px-6">
+      <div id="lang-switch" role="group" aria-label="Language" hidden class="flex rounded-full border border-ink/15 bg-white/50 p-0.5 text-[13px] font-bold">
+        {Object.entries(LANGS).map(([code, l]) => (
+          <button
+            type="button"
+            value={code}
+            lang={code}
+            title={l.name}
+            aria-pressed={code === 'en' ? 'true' : 'false'}
+            class="cursor-pointer rounded-full px-2.5 py-1 transition-colors not-aria-pressed:text-ink/55 not-aria-pressed:hover:text-ink aria-pressed:bg-ink aria-pressed:text-white"
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </header>
   <main class="mx-auto flex min-h-dvh max-w-[1240px] flex-col justify-center px-4 md:px-6">
     {Object.entries(text).map(([lang, t]) => (
       <div lang={lang} data-lang={lang} hidden={lang !== 'en'}>
         <h1 class="text-[clamp(2.2rem,6vw,4rem)] leading-tight font-extrabold tracking-tight">{t.title}</h1>
-        <p class="mt-4 text-[18px] text-ink/80">{t.body}</p>
+        <p lang="en" class="mt-4 text-[18px] text-ink/80">{t.body}</p>
         <a href={t.href} class="mt-8 inline-block text-[18px] font-semibold text-traffic underline decoration-traffic/30 underline-offset-4 hover:decoration-traffic">
           {t.home}
         </a>

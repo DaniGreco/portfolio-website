@@ -3,12 +3,24 @@
 export const INLINE_SCRIPTS = {
   // Entrance animations hide their elements only when JavaScript can reveal them again.
   markJs: "document.documentElement.classList.add('js');",
-  // One 404 page serves every missing address: addresses under /it/ get the Italian text.
+  // One 404 page serves every missing address: addresses under /it/ get the Italian text,
+  // and the language switch changes it in place.
   notFoundLang: `
-if (location.pathname.startsWith('/it/')) {
-  document.documentElement.lang = 'it';
-  document.title = 'Pagina non trovata, Daniele Greco';
-  for (const el of document.querySelectorAll('[data-lang]')) el.hidden = el.dataset.lang !== 'it';
-}
+const pages = {
+  en: { title: 'Page not found, Daniele Greco', language: 'Language' },
+  it: { title: 'Pagina non trovata, Daniele Greco', language: 'Lingua' },
+};
+const langSwitch = document.getElementById('lang-switch');
+const buttons = langSwitch.querySelectorAll('button');
+const show = (lang) => {
+  document.documentElement.lang = lang;
+  document.title = pages[lang].title;
+  langSwitch.setAttribute('aria-label', pages[lang].language);
+  for (const el of document.querySelectorAll('[data-lang]')) el.hidden = el.dataset.lang !== lang;
+  for (const button of buttons) button.setAttribute('aria-pressed', String(button.value === lang));
+};
+for (const button of buttons) button.addEventListener('click', () => show(button.value));
+show(location.pathname.startsWith('/it/') ? 'it' : 'en');
+langSwitch.hidden = false;
 `,
 };
