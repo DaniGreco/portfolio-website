@@ -91,7 +91,7 @@ const en = {
     lead: 'Ask for a quote',
     email: EMAIL,
     about:
-      'Curiosity drives most of what I do. Besides technology I read about maths, finance, music, cinema and philosophy, and I like taking ideas from one field into another.',
+      'Curiosity drives most of what I do. Besides technology I read about math, finance, music, cinema and philosophy, and I enjoy cross-pollinating ideas across domains to solve complex problems.',
     source: 'Source code on GitHub',
   },
 };
