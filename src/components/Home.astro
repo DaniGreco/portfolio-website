@@ -73,7 +73,7 @@ const nav = [
             text={t.hero.title}
             class="hero-in wide-type text-[clamp(1.85rem,3.7vw,3.5rem)] leading-[1.03] font-extrabold tracking-[-0.02em] text-balance lg:col-span-8"
           />
-          <div class="hero-in fade-up glass p-5 sm:p-6 lg:col-span-4" style="--delay: 450ms">
+          <div id="hero-intro" class="hero-in fade-up glass p-5 sm:p-6 lg:col-span-4" style="--delay: 450ms">
             <p class="max-w-[44ch] text-[16.5px] leading-relaxed text-ink/80 sm:text-[18px] [&_strong]:font-bold [&_strong]:text-ink" set:html={t.hero.intro} />
             <ul class="mt-5 flex flex-wrap gap-2.5 text-[15px] font-semibold sm:mt-6">
               <li>
@@ -222,6 +222,28 @@ const nav = [
   const onScroll = () => bar?.toggleAttribute('data-scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+
+  // One wheel tick down on the first screen moves on to the demo. Left alone, the browser snaps a
+  // short scroll back to the top, or stops a little lower when the screen is taller than the window.
+  // It steps in only once the title and the intro are in view: below them is just the demo button.
+  const intro = document.getElementById('hero-intro');
+  const demo = document.getElementById('demo');
+  let gesture = 0;
+  window.addEventListener('wheel', (e) => {
+    // The rest of the same gesture, such as touchpad momentum, would carry on past the demo.
+    if (gesture) {
+      e.preventDefault();
+      clearTimeout(gesture);
+      gesture = setTimeout(() => (gesture = 0), 200);
+      return;
+    }
+    if (!intro || !demo || e.deltaY <= 0 || e.ctrlKey) return;
+    const onTop = demo.getBoundingClientRect().top > (bar?.offsetHeight ?? 0) + 1;
+    if (!onTop || intro.getBoundingClientRect().bottom > window.innerHeight) return;
+    e.preventDefault();
+    demo.scrollIntoView({ block: 'start' });
+    gesture = setTimeout(() => (gesture = 0), 200);
+  }, { passive: false });
 
   // One underline per screen: Experience and Studies share a screen, so they share the line.
   const groups = [...document.querySelectorAll('.nav-group')];
