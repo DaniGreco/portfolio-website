@@ -26,7 +26,13 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     scroll-padding-top: var(--header);
-    scroll-snap-type: y proximity;
+  }
+
+  /* Phones and narrow windows scroll freely; wider screens snap from section to section. */
+  @media (min-width: 1024px) {
+    html {
+      scroll-snap-type: y proximity;
+    }
   }
 
   /* A firm snap from section to section where every section fits the screen. */

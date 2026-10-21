@@ -223,25 +223,35 @@ const nav = [
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  // One wheel tick down on the first screen moves on to the demo. Left alone, the browser snaps a
-  // short scroll back to the top, or stops a little lower when the screen is taller than the window.
-  // It steps in only once the title and the intro are in view: below them is just the demo button.
+  // One wheel tick moves between the first screen and the demo, in one smooth movement. Left alone,
+  // the browser snaps a short scroll back to where it started, stops a little lower when the screen
+  // is taller than the window, or stops short of the top and then corrects itself.
+  // Down, it steps in only once the title and the intro are in view: below them is just the demo button.
+  // Up, only from the start of the demo. Narrow windows scroll freely, as on phones (global.css).
   const intro = document.getElementById('hero-intro');
   const demo = document.getElementById('demo');
+  const snapping = matchMedia('(min-width: 1024px)');
   let gesture = 0;
   window.addEventListener('wheel', (e) => {
-    // The rest of the same gesture, such as touchpad momentum, would carry on past the demo.
+    // The rest of the same gesture, such as touchpad momentum, would carry on past the target.
     if (gesture) {
       e.preventDefault();
       clearTimeout(gesture);
       gesture = setTimeout(() => (gesture = 0), 200);
       return;
     }
-    if (!intro || !demo || e.deltaY <= 0 || e.ctrlKey) return;
-    const onTop = demo.getBoundingClientRect().top > (bar?.offsetHeight ?? 0) + 1;
-    if (!onTop || intro.getBoundingClientRect().bottom > window.innerHeight) return;
-    e.preventDefault();
-    demo.scrollIntoView({ block: 'start' });
+    if (!intro || !demo || !snapping.matches || e.deltaY === 0 || e.ctrlKey) return;
+    // How far the demo is from its place under the top bar: above 0 the first screen is in view.
+    const demoBelow = demo.getBoundingClientRect().top - (bar?.offsetHeight ?? 0);
+    if (e.deltaY > 0) {
+      if (demoBelow <= 1 || intro.getBoundingClientRect().bottom > window.innerHeight) return;
+      e.preventDefault();
+      demo.scrollIntoView({ block: 'start' });
+    } else {
+      if (demoBelow < -1 || window.scrollY === 0) return;
+      e.preventDefault();
+      window.scrollTo({ top: 0 });
+    }
     gesture = setTimeout(() => (gesture = 0), 200);
   }, { passive: false });
 
