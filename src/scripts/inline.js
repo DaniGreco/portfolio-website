@@ -6,16 +6,12 @@ export const INLINE_SCRIPTS = {
   // One 404 page serves every missing address: addresses under /it/ get the Italian text,
   // and the language switch changes it in place.
   notFoundLang: `
-const pages = {
-  en: { title: 'Page not found, Daniele Greco', language: 'Language' },
-  it: { title: 'Pagina non trovata, Daniele Greco', language: 'Lingua' },
-};
+const labels = { en: 'Language', it: 'Lingua' };
 const langSwitch = document.getElementById('lang-switch');
 const buttons = langSwitch.querySelectorAll('button');
 const show = (lang) => {
   document.documentElement.lang = lang;
-  document.title = pages[lang].title;
-  langSwitch.setAttribute('aria-label', pages[lang].language);
+  langSwitch.setAttribute('aria-label', labels[lang]);
   for (const el of document.querySelectorAll('[data-lang]')) el.hidden = el.dataset.lang !== lang;
   for (const button of buttons) button.setAttribute('aria-pressed', String(button.value === lang));
 };

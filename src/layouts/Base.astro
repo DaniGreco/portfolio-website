@@ -4,6 +4,7 @@ import { LANGS } from '../i18n/home.js';
 import { INLINE_SCRIPTS } from '../scripts/inline.js';
 
 interface Props {
+  // The headline of link previews: the browser tab shows only the name.
   title: string;
   description: string;
   lang?: keyof typeof LANGS;
@@ -21,7 +22,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script is:inline set:html={INLINE_SCRIPTS.markJs} />
-    <title>{title}</title>
+    <title>Daniele Greco</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {alternates && Object.entries(LANGS).map(([code, l]) => <link rel="alternate" hreflang={code} href={new URL(l.path, Astro.site)} />)}
