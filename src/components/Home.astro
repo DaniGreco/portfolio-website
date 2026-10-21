@@ -226,8 +226,10 @@ const nav = [
   // One wheel tick down on the first screen moves on to the demo. Left alone, the browser snaps a
   // short scroll back to the top, or stops a little lower when the screen is taller than the window.
   // It steps in only once the title and the intro are in view: below them is just the demo button.
+  // Narrow windows scroll freely, as on phones (global.css).
   const intro = document.getElementById('hero-intro');
   const demo = document.getElementById('demo');
+  const snapping = matchMedia('(min-width: 1024px)');
   let gesture = 0;
   window.addEventListener('wheel', (e) => {
     // The rest of the same gesture, such as touchpad momentum, would carry on past the demo.
@@ -237,7 +239,7 @@ const nav = [
       gesture = setTimeout(() => (gesture = 0), 200);
       return;
     }
-    if (!intro || !demo || e.deltaY <= 0 || e.ctrlKey) return;
+    if (!intro || !demo || !snapping.matches || e.deltaY <= 0 || e.ctrlKey) return;
     const onTop = demo.getBoundingClientRect().top > (bar?.offsetHeight ?? 0) + 1;
     if (!onTop || intro.getBoundingClientRect().bottom > window.innerHeight) return;
     e.preventDefault();
