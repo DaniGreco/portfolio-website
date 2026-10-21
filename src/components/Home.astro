@@ -22,11 +22,12 @@ const nav = [
 
 <Base lang={lang} title={t.meta.title} description={t.meta.description}>
   <header id="top-bar" class="sticky top-0 z-50 h-(--header) border-b border-white/60 bg-paper/35 backdrop-blur-md transition-[border-color,box-shadow] data-[scrolled]:border-ink/10 data-[scrolled]:shadow-[0_10px_30px_-24px_rgba(20,24,46,0.5)]">
-    <div class="mx-auto flex h-full max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
-      <a href="#top" class="wide-type text-[17px] font-extrabold tracking-tight whitespace-nowrap" aria-label={t.bar.home}>
-        <span class="sm:hidden" aria-hidden="true">DG</span><span class="hidden sm:inline">Daniele Greco</span><span class="hidden font-sans text-[15px] font-medium tracking-normal text-ink/60 xl:inline" style="font-stretch: 100%"> · {t.bar.role}</span>
+    <!-- Phones get smaller type and gaps, so the name, the Italian quote button and the language switch fit on one line. -->
+    <div class="mx-auto flex h-full max-w-[1400px] items-center justify-between gap-2 px-4 sm:gap-4 md:px-6">
+      <a href="#top" class="wide-type text-[15px] font-extrabold tracking-tight whitespace-nowrap sm:text-[17px]" aria-label={t.bar.home}>
+        <span class="sm:hidden" aria-hidden="true">Daniele G.</span><span class="hidden sm:inline">Daniele Greco</span><span class="hidden font-sans text-[15px] font-medium tracking-normal text-ink/60 xl:inline" style="font-stretch: 100%"> · {t.bar.role}</span>
       </a>
-      <div class="flex items-center gap-3 lg:gap-5">
+      <div class="flex items-center gap-2 sm:gap-3 lg:gap-5">
         <nav aria-label={t.bar.sections} class="hidden gap-4 text-[15px] font-semibold text-ink/65 md:flex lg:gap-6">
           {nav.map((group) => (
             <span class="nav-group relative inline-flex gap-4 lg:gap-6" data-section={group.section}>
@@ -36,7 +37,7 @@ const nav = [
             </span>
           ))}
         </nav>
-        <a href={t.bar.quoteMail} class="rounded-full bg-ink px-4 py-2 text-[14px] font-semibold whitespace-nowrap text-white transition-colors hover:bg-traffic sm:text-[15px]">
+        <a href={t.bar.quoteMail} class="rounded-full bg-ink px-3 py-2 text-[13px] font-semibold whitespace-nowrap text-white transition-colors hover:bg-traffic sm:px-4 sm:text-[15px]">
           {t.bar.quote}
         </a>
         <nav aria-label={t.bar.language} class="flex rounded-full border border-ink/15 bg-white/50 p-0.5 text-[13px] font-bold">
@@ -180,9 +181,11 @@ const nav = [
           </div>
         </div>
       </div>
-      <footer class="mx-auto w-full max-w-[1400px] px-4 pb-6 md:px-6">
-        <div class="glass flex flex-wrap justify-between gap-3 px-5 py-3 text-[14px] text-muted">
+      <footer class="mx-auto flex w-full max-w-[1400px] justify-center px-4 pb-6 md:px-6">
+        <!-- Smaller on phones, so the Italian text too stays on one line. -->
+        <div class="glass flex flex-wrap justify-center gap-x-2 gap-y-1 px-4 py-3 text-[12px] text-muted sm:px-5 sm:text-[14px]">
           <span>© {year} Daniele Greco</span>
+          <span aria-hidden="true">·</span>
           <a href="https://github.com/DaniGreco/website" class="underline decoration-ink/20 underline-offset-4 hover:text-ink">
             {t.contact.source}
           </a>
