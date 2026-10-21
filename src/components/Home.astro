@@ -180,9 +180,11 @@ const nav = [
           </div>
         </div>
       </div>
-      <footer class="mx-auto w-full max-w-[1400px] px-4 pb-6 md:px-6">
-        <div class="glass flex flex-wrap justify-between gap-3 px-5 py-3 text-[14px] text-muted">
+      <footer class="mx-auto flex w-full max-w-[1400px] justify-center px-4 pb-6 md:px-6">
+        <!-- Smaller on phones, so the Italian text too stays on one line. -->
+        <div class="glass flex flex-wrap justify-center gap-x-2 gap-y-1 px-4 py-3 text-[12px] text-muted sm:px-5 sm:text-[14px]">
           <span>© {year} Daniele Greco</span>
+          <span aria-hidden="true">·</span>
           <a href="https://github.com/DaniGreco/website" class="underline decoration-ink/20 underline-offset-4 hover:text-ink">
             {t.contact.source}
           </a>
