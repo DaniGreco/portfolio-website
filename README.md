@@ -26,7 +26,7 @@ npm run preview   # serve dist/ locally
   - `Playground.jsx`: drawing, animations and the scenarios.
 - `src/scripts/backgrounds/flow.js`: the page background, strands following a noise flow field;
   the pointer pulls them into a vortex. `loop.js` holds the shared canvas loop, `noise.js` the noise.
-- `public/_redirects`: short links (`/github`, `/linkedin`).
+- `public/_redirects`: short links (`/github`, `/linkedin`, `/hai-sim`).
 - `public/robots.txt`: asks AI training crawlers to stay out.
 
 ## Deploy
